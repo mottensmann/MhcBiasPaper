@@ -1,0 +1,22 @@
+Adapter Sequences of Illumina Kits. ;;;
+Index;Sequence;primer;Kit
+N701;TAAGGCGA;Forward;Nextera_XT
+N702;CGTACTAG;Forward;Nextera_XT
+N703;AGGCAGAA;Forward;Nextera_XT
+N704;TCCTGAGC;Forward;Nextera_XT
+N705;GGACTCCT;Forward;Nextera_XT
+N706;TAGGCATG;Forward;Nextera_XT
+N707;CTCTCTAC;Forward;Nextera_XT
+N708;CAGAGAGG;Forward;Nextera_XT
+N709;GCTACGCT;Forward;Nextera_XT
+N710;CGAGGCTG;Forward;Nextera_XT
+N711;AAGAGGCA;Forward;Nextera_XT
+N712;GTAGAGGA;Forward;Nextera_XT
+S501;TAGATCGC;Reverse;Nextera_XT
+S502;CTCTCTAT;Reverse;Nextera_XT
+S503;TATCCTCT;Reverse;Nextera_XT
+S504;AGAGTAGA;Reverse;Nextera_XT
+S505;GTAAGGAG;Reverse;Nextera_XT
+S506;ACTGCATA;Reverse;Nextera_XT
+S507;AAGGAGTA;Reverse;Nextera_XT
+S508;CTAAGCCT;Reverse;Nextera_XT

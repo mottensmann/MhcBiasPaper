@@ -1,0 +1,2 @@
+Arguments:
+Namespace(FASTQ='seq.fastq', alpha='2.0', cpus='2', error='1.0', hmm='seal_dqb.hmm', length='auto', minfreq='False', minsize='10', out='dqb_pct_1.0_a_2.0_ee_1.0', pct_mapping='1.0', usearch='usearch10.exe')

@@ -1,0 +1,253 @@
+
+Variable 'DATAFILE_TREE' was not initialized prior to being used
+Row and/or column partition is empty. All the data will be used by default.
+Variable 'methodIndex' was not initialized prior to being used
+Variable 'ds0.sites' was not initialized prior to being used
+Overwritten previously defined function:'avlToLabels'
+Overwritten previously defined function:'avlKeysToMatrix'
+Overwritten previously defined function:'avlToString'
+Overwritten previously defined function:'avlToRow'
+Overwritten previously defined function:'splitFilePath'
+Overwritten previously defined function:'fixGlobalParameters'
+Overwritten previously defined function:'promptForGlobalParameters'
+Overwritten previously defined function:'echoGlobalParameters'
+Overwritten previously defined function:'stashGlobalParameters'
+Overwritten previously defined function:'defineIfNeeded'
+Overwritten previously defined function:'restoreGlobalParameters'
+Overwritten previously defined function:'stringMatrixToAVL'
+Overwritten previously defined function:'avlToMatrix'
+Overwritten previously defined function:'_standardizeRatio'
+Overwritten previously defined function:'_copyws'
+Overwritten previously defined function:'_mapNumberToString'
+Overwritten previously defined function:'_normalizeRatio'
+Overwritten previously defined function:'AVL2Matrix'
+Overwritten previously defined function:'mapModelKeyToString'
+Overwritten previously defined function:'updateStatusLine'
+Row and/or column partition is empty. All the data will be used by default.
+Row and/or column partition is empty. All the data will be used by default.
+Row and/or column partition is empty. All the data will be used by default.
+Variable 'totalCharCount' was not initialized prior to being used
+Variable 'totalCodonCount' was not initialized prior to being used
+Variable 'totalUniqueSites' was not initialized prior to being used
+Variable 'ModelMatrixDimension' was not initialized prior to being used
+Model NucModel assigned to TX0
+Model NucModel assigned to TX2
+Model NucModel assigned to Node4
+Model NucModel assigned to TX9
+Model NucModel assigned to Node3
+Model NucModel assigned to TX7
+Model NucModel assigned to Node2
+Model NucModel assigned to TX4
+Model NucModel assigned to TX11
+Model NucModel assigned to Node9
+Model NucModel assigned to Node1
+Model NucModel assigned to TX1
+Model NucModel assigned to TX8
+Model NucModel assigned to Node15
+Model NucModel assigned to TX12
+Model NucModel assigned to Node14
+Model NucModel assigned to TX3
+Model NucModel assigned to TX14
+Model NucModel assigned to Node19
+Model NucModel assigned to Node13
+Model NucModel assigned to TX5
+Model NucModel assigned to TX6
+Model NucModel assigned to TX15
+Model NucModel assigned to Node24
+Model NucModel assigned to Node22
+Model NucModel assigned to Node12
+Model NucModel assigned to TX10
+Model NucModel assigned to TX13
+Model NucModel assigned to Node27
+The tips of the tree:nucTree_1 were matched with the species names from the data as follows {0,2,9,7,4,11,1,8,12,3,14,5,6,15,10,13}
+
+Pseudo-optimal path's cost 290 vs 400 for 1..k=> a 1.37931 x improvement
+Partition  reversible model flag computed as 1
+Variable 'nucLF' was not initialized prior to being used
+Variable 'nucTree_1.TX0.t' was not initialized prior to being used
+Variable 'nucTree_1.TX2.t' was not initialized prior to being used
+Variable 'nucTree_1.TX9.t' was not initialized prior to being used
+Variable 'nucTree_1.TX7.t' was not initialized prior to being used
+Variable 'nucTree_1.TX4.t' was not initialized prior to being used
+Variable 'nucTree_1.TX11.t' was not initialized prior to being used
+Variable 'nucTree_1.TX1.t' was not initialized prior to being used
+Variable 'nucTree_1.TX8.t' was not initialized prior to being used
+Variable 'nucTree_1.TX12.t' was not initialized prior to being used
+Variable 'nucTree_1.TX3.t' was not initialized prior to being used
+Variable 'nucTree_1.TX14.t' was not initialized prior to being used
+Variable 'nucTree_1.TX5.t' was not initialized prior to being used
+Variable 'nucTree_1.TX6.t' was not initialized prior to being used
+Variable 'nucTree_1.TX15.t' was not initialized prior to being used
+Variable 'nucTree_1.TX10.t' was not initialized prior to being used
+Variable 'nucTree_1.TX13.t' was not initialized prior to being used
+Variable 'nucTree_1.Node4.t' was not initialized prior to being used
+Variable 'nucTree_1.Node3.t' was not initialized prior to being used
+Variable 'nucTree_1.Node2.t' was not initialized prior to being used
+Variable 'nucTree_1.Node9.t' was not initialized prior to being used
+Variable 'nucTree_1.Node1.t' was not initialized prior to being used
+Variable 'nucTree_1.Node15.t' was not initialized prior to being used
+Variable 'nucTree_1.Node14.t' was not initialized prior to being used
+Variable 'nucTree_1.Node19.t' was not initialized prior to being used
+Variable 'nucTree_1.Node13.t' was not initialized prior to being used
+Variable 'nucTree_1.Node24.t' was not initialized prior to being used
+Variable 'nucTree_1.Node22.t' was not initialized prior to being used
+Variable 'nucTree_1.Node12.t' was not initialized prior to being used
+Variable 'nucTree_1.Node27.t' was not initialized prior to being used
+Site 11 evaluated to a 0 probability in ComputeTreeBlockByBranch
+Set GUI update interval to every -2147483648-th LF evaluation.
+Initial guess for nucTree_1.Node1.t is 0.0001517003517691692
+Initial guess for nucTree_1.Node2.t is 0.006119860507239581
+Initial guess for nucTree_1.Node3.t is 0.001302855356604894
+Initial guess for nucTree_1.Node4.t is 0.004401295103774024
+Initial guess for nucTree_1.TX0.t is -3.409110076483742e-017
+Initial guess for nucTree_1.TX2.t is -3.330720364991334e-017
+Initial guess for nucTree_1.TX9.t is 0.005151343049450396
+Initial guess for nucTree_1.TX7.t is 0.006848679475551143
+Initial guess for nucTree_1.Node9.t is 0.004567950415738774
+Initial guess for nucTree_1.TX4.t is 1.167930213407807e-017
+Initial guess for nucTree_1.TX11.t is 1.212694310765351e-017
+Initial guess for nucTree_1.Node12.t is 0.004764547363616273
+Initial guess for nucTree_1.Node13.t is 0.001126646959376718
+Initial guess for nucTree_1.Node14.t is 0.004143245122425352
+Initial guess for nucTree_1.Node15.t is 0.001479753843679803
+Initial guess for nucTree_1.TX1.t is 0.003070780984587674
+Initial guess for nucTree_1.TX8.t is 0.001681293723930781
+Initial guess for nucTree_1.TX12.t is 0.003296565232932333
+Initial guess for nucTree_1.Node19.t is 0.00178899909337747
+Initial guess for nucTree_1.TX3.t is 0.002551217178925234
+Initial guess for nucTree_1.TX14.t is 0.002200857529593241
+Initial guess for nucTree_1.Node22.t is 0.00976302929291095
+Initial guess for nucTree_1.TX5.t is 0.003190761801014805
+Initial guess for nucTree_1.Node24.t is 0.01879075235226698
+Initial guess for nucTree_1.TX6.t is 0.007183554482283919
+Initial guess for nucTree_1.TX15.t is 0.002369083670940388
+Initial guess for nucTree_1.Node27.t is 0.001362451882622948
+Initial guess for nucTree_1.TX10.t is 0.0006483195684122804
+Initial guess for nucTree_1.TX13.t is 0.004103755140106327
+Optimization settings:
+	OPTIMIZATION_METHOD = 4
+	OPTIMIZATION_PRECISION = 0.001
+	MAXIMUM_ITERATIONS_PER_VARIABLE = 5000
+
+Initial parameter values
+
+GT = 1
+CT = 1
+AC = 1
+CG = 1
+AT = 1
+nucTree_1.TX0.t = 0
+nucTree_1.TX2.t = 0
+nucTree_1.Node4.t = 0.004401295103774024
+nucTree_1.TX9.t = 0.005151343049450396
+nucTree_1.Node3.t = 0.001302855356604894
+nucTree_1.TX7.t = 0.006848679475551143
+nucTree_1.Node2.t = 0.006119860507239581
+nucTree_1.TX4.t = 1.167930213407807e-017
+nucTree_1.TX11.t = 1.212694310765351e-017
+nucTree_1.Node9.t = 0.004567950415738774
+nucTree_1.Node1.t = 0.0001517003517691692
+nucTree_1.TX1.t = 0.003070780984587674
+nucTree_1.TX8.t = 0.001681293723930781
+nucTree_1.Node15.t = 0.001479753843679803
+nucTree_1.TX12.t = 0.003296565232932333
+nucTree_1.Node14.t = 0.004143245122425352
+nucTree_1.TX3.t = 0.002551217178925234
+nucTree_1.TX14.t = 0.002200857529593241
+nucTree_1.Node19.t = 0.00178899909337747
+nucTree_1.Node13.t = 0.001126646959376718
+nucTree_1.TX5.t = 0.003190761801014805
+nucTree_1.TX6.t = 0.007183554482283919
+nucTree_1.TX15.t = 0.002369083670940388
+nucTree_1.Node24.t = 0.01879075235226698
+nucTree_1.Node22.t = 0.00976302929291095
+nucTree_1.Node12.t = 0.004764547363616273
+nucTree_1.TX10.t = 0.0006483195684122804
+nucTree_1.TX13.t = 0.004103755140106327
+nucTree_1.Node27.t = 0.001362451882622948
+Optimization finished in 13 loop passes.
+2969 likelihood evaluation calls and 24018 matrix exponentiations calls were made
+
+Model MGModel assigned to TX0
+Model MGModel assigned to TX2
+Model MGModel assigned to Node4
+Model MGModel assigned to TX9
+Model MGModel assigned to Node3
+Model MGModel assigned to TX7
+Model MGModel assigned to Node2
+Model MGModel assigned to TX4
+Model MGModel assigned to TX11
+Model MGModel assigned to Node9
+Model MGModel assigned to Node1
+Model MGModel assigned to TX1
+Model MGModel assigned to TX8
+Model MGModel assigned to Node15
+Model MGModel assigned to TX12
+Model MGModel assigned to Node14
+Model MGModel assigned to TX3
+Model MGModel assigned to TX14
+Model MGModel assigned to Node19
+Model MGModel assigned to Node13
+Model MGModel assigned to TX5
+Model MGModel assigned to TX6
+Model MGModel assigned to TX15
+Model MGModel assigned to Node24
+Model MGModel assigned to Node22
+Model MGModel assigned to Node12
+Model MGModel assigned to TX10
+Model MGModel assigned to TX13
+Model MGModel assigned to Node27
+The tips of the tree:codonTree_1 were matched with the species names from the data as follows {0,2,9,7,4,11,1,8,12,3,14,5,6,15,10,13}
+
+Pseudo-optimal path's cost 714 vs 794 for 1..k=> a 1.11204 x improvement
+Partition  reversible model flag computed as 1
+
+ReplicateConstraint generated the following contsraints:
+codonTree_1.TX0.synRate:=rConstr*nucTree_1.TX0.t__;
+codonTree_1.TX2.synRate:=rConstr*nucTree_1.TX2.t__;
+codonTree_1.Node4.synRate:=rConstr*nucTree_1.Node4.t__;
+codonTree_1.TX9.synRate:=rConstr*nucTree_1.TX9.t__;
+codonTree_1.Node3.synRate:=rConstr*nucTree_1.Node3.t__;
+codonTree_1.TX7.synRate:=rConstr*nucTree_1.TX7.t__;
+codonTree_1.Node2.synRate:=rConstr*nucTree_1.Node2.t__;
+codonTree_1.TX4.synRate:=rConstr*nucTree_1.TX4.t__;
+codonTree_1.TX11.synRate:=rConstr*nucTree_1.TX11.t__;
+codonTree_1.Node9.synRate:=rConstr*nucTree_1.Node9.t__;
+codonTree_1.Node1.synRate:=rConstr*nucTree_1.Node1.t__;
+codonTree_1.TX1.synRate:=rConstr*nucTree_1.TX1.t__;
+codonTree_1.TX8.synRate:=rConstr*nucTree_1.TX8.t__;
+codonTree_1.Node15.synRate:=rConstr*nucTree_1.Node15.t__;
+codonTree_1.TX12.synRate:=rConstr*nucTree_1.TX12.t__;
+codonTree_1.Node14.synRate:=rConstr*nucTree_1.Node14.t__;
+codonTree_1.TX3.synRate:=rConstr*nucTree_1.TX3.t__;
+codonTree_1.TX14.synRate:=rConstr*nucTree_1.TX14.t__;
+codonTree_1.Node19.synRate:=rConstr*nucTree_1.Node19.t__;
+codonTree_1.Node13.synRate:=rConstr*nucTree_1.Node13.t__;
+codonTree_1.TX5.synRate:=rConstr*nucTree_1.TX5.t__;
+codonTree_1.TX6.synRate:=rConstr*nucTree_1.TX6.t__;
+codonTree_1.TX15.synRate:=rConstr*nucTree_1.TX15.t__;
+codonTree_1.Node24.synRate:=rConstr*nucTree_1.Node24.t__;
+codonTree_1.Node22.synRate:=rConstr*nucTree_1.Node22.t__;
+codonTree_1.Node12.synRate:=rConstr*nucTree_1.Node12.t__;
+codonTree_1.TX10.synRate:=rConstr*nucTree_1.TX10.t__;
+codonTree_1.TX13.synRate:=rConstr*nucTree_1.TX13.t__;
+codonTree_1.Node27.synRate:=rConstr*nucTree_1.Node27.t__;
+
+Variable 'lf' was not initialized prior to being used
+Set GUI update interval to every 32-th LF evaluation.
+Optimization settings:
+	OPTIMIZATION_METHOD = 4
+	OPTIMIZATION_PRECISION = 0.001
+	MAXIMUM_ITERATIONS_PER_VARIABLE = 5000
+
+Initial parameter values
+
+dNdS = 0.25
+Optimization finished in 4 loop passes.
+50 likelihood evaluation calls and 1276 matrix exponentiations calls were made
+
+The tips of the tree:codonTree_1 were matched with the species names from the data as follows {0,2,9,7,4,11,1,8,12,3,14,5,6,15,10,13}
+Partition  reversible model flag computed as 1
+Row and/or column partition is empty. All the data will be used by default.
+Row and/or column partition is empty. All the data will be used by default.
+Row and/or column partition is empty. All the data will be used by default.

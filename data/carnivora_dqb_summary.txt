@@ -1,0 +1,200 @@
+
+1. Arctocephalus gazella clone AFS1 MHC class II antigen (MHC-DQB) gene, exon 2 and partial cds
+141 bp linear DNA 
+AF111039.1 GI:4028671
+
+2. Arctocephalus gazella clone AFS2 MHC class II antigen (MHC-DQB) gene, exon 2 and partial cds
+141 bp linear DNA 
+AF111040.1 GI:4028673
+
+3. Arctocephalus gazella clone AFS3 MHC class II antigen (MHC-DQB) gene, exon 2 and partial cds
+141 bp linear DNA 
+AF111041.1 GI:4028675
+
+4. Arctocephalus gazella clone AFS4 MHC class II antigen (MHC-DQB) gene, exon 2 and partial cds
+141 bp linear DNA 
+AF111042.1 GI:4028677
+
+5. Neophoca cinerea MHC class II antigen (NeciDQB) gene, NeciDQB*01 allele, partial cds
+172 bp linear DNA 
+KP127612.1 GI:829490617
+
+6. Neophoca cinerea MHC class II antigen (NeciDQB) gene, NeciDQB*02 allele, partial cds
+172 bp linear DNA 
+KP127613.1 GI:829490619
+
+7. Neophoca cinerea MHC class II antigen (NeciDQB) gene, NeciDQB*03 allele, partial cds
+172 bp linear DNA 
+KP127614.1 GI:829490621
+
+8. Zalophus californianus MHC class II antigen (Zaca-DQB) mRNA, Zaca-DQB*01 allele, complete cds
+1,146 bp linear mRNA 
+AF503397.1 GI:22023804
+
+9. Zalophus californianus MHC class II antigen (Zaca-DQB) mRNA, Zaca-DQB*02 allele, complete cds
+1,146 bp linear mRNA 
+AF503398.1 GI:22023806
+
+10. Zalophus californianus MHC class II antigen (Zaca-DQB) mRNA, Zaca-DQB*03 allele, complete cds
+1,146 bp linear mRNA 
+AF503399.1 GI:22023808
+
+11. Zalophus californianus MHC class II antigen (Zaca-DQB) mRNA, Zaca-DQB*04 allele, complete cds
+1,146 bp linear mRNA 
+AF503400.1 GI:22023810
+
+12. Zalophus californianus MHC class II antigen (Zaca-DQB) mRNA, Zaca-DQB*05 allele, complete cds
+1,146 bp linear mRNA 
+AF503401.1 GI:22023812
+
+13. Zalophus californianus MHC class II antigen (Zaca-DQB) mRNA, Zaca-DQB-DQB*06 allele, complete cds
+800 bp linear mRNA 
+AF503402.1 GI:22023814
+
+14. Zalophus californianus MHC class II antigen (Zaca-DQB) mRNA, Zaca-DQB*09 allele, complete cds
+876 bp linear mRNA 
+AF503405.1 GI:22023818
+
+15. Zalophus californianus MHC class II antigen (Zaca-DQB) mRNA, Zaca-DQB*10 allele, complete cds
+1,122 bp linear mRNA 
+AF503406.1 GI:22023820
+
+16. Zalophus californianus MHC class II antigen (Zaca-DQB) mRNA, Zaca-DQB*11 allele, complete cds
+1,122 bp linear mRNA 
+AF503407.1 GI:22023822
+
+17. Canis familiaris MHC class II DQ-beta chain mRNA (DLA-D1), partial cds
+606 bp linear mRNA 
+M90803.1 GI:164014
+
+18. Canis familiaris MHC class II DQ-beta chain mRNA (DLA-D10), partial cds
+606 bp linear mRNA 
+M90804.1 GI:164016
+
+19. Canis familiaris MHC DQ-beta chain mRNA (DLA-D8), partial cds
+606 bp linear mRNA 
+M90805.1 GI:164018
+
+20. Canis familiaris MHC class II DQ-beta chain mRNA (DLA-Dw3/Dw3), partial cds
+606 bp linear mRNA 
+M90802.1 GI:164020
+
+21. DLA-DQB1 (DQB1*0101)=major histocompatibility complex class II beta chain [dogs, mRNA, 606 nt]
+606 bp linear mRNA 
+S53615.1 GI:264126
+
+22. Canis familiaris MHC DLA-DQB1*0202 mRNA, partial exon
+606 bp linear mRNA 
+Y07945.1 GI:1666306
+
+23. Canis familiaris MHC DLA-DQB1*0302 mRNA, partial exon
+606 bp linear mRNA 
+Y07946.1 GI:1666308
+
+24. Canis familiaris MHC DLA-DQB1*0501 mRNA, partial exon
+606 bp linear mRNA 
+Y07947.1 GI:1666310
+
+25. Canis familiaris MHC DLA-DQB1*0601 mRNA, partial exon
+157 bp linear mRNA 
+Y07948.1 GI:1666312
+
+26. Canis familiaris MHC DLA-DQB1*0701 mRNA, partial exon
+157 bp linear mRNA 
+Y07949.1 GI:1666314
+
+27. Canis familiaris MHC class II antigen (DQB) gene, DQB1*01101 allele, exon 2 and partial cds
+250 bp linear DNA 
+AF016904.1 GI:2394249
+
+28. Canis familiaris MHC class II antigen (DQB) gene, DQB1*00101 allele, exon 2 and partial cds
+250 bp linear DNA 
+AF016905.1 GI:2394251
+
+29. Canis familiaris MHC class II antigen (DQB) gene, DQB1*01303 allele, exon 2 and partial cds
+250 bp linear DNA 
+AF016906.1 GI:2394253
+
+30. Canis familiaris MHC class II antigen (DQB) gene, DQB1*00701 allele, exon 2 and partial cds
+250 bp linear DNA 
+AF016907.1 GI:2394255
+
+31. Canis familiaris MHC class II antigen (DQB) gene, DQB1*00201 allele, exon 2 and partial cds
+250 bp linear DNA 
+AF016908.1 GI:2394257
+
+32. Canis familiaris MHC class II antigen (DQB) gene, DQB1*02301 allele, exon 2 and partial cds
+250 bp linear DNA 
+AF016909.1 GI:2394259
+
+33. Canis lupus familiaris major histocompatibility complex, class II, DQ beta 1 (DLA-DQB1), mRNA
+1,121 bp linear mRNA 
+NM_001014381.1 GI:62177177
+
+34. Zalophus wollebaeki partial Zawo-DQB gene for MHC class II antigen, allele Zawo-DQB*01, exon 2
+159 bp linear DNA 
+HE663126.1 GI:384071259
+
+35. Zalophus wollebaeki partial Zawo-DQB gene for MHC class II antigen, allele Zawo-DQB*02, exon 2
+159 bp linear DNA 
+HE663127.1 GI:384071261
+
+36. Zalophus wollebaeki partial Zawo-DQB gene for MHC class II antigen, allele Zawo-DQB*03, exon 2
+159 bp linear DNA 
+HE663128.1 GI:384071263
+
+37. Monachus schauinslandi MHC class II antigen (DQB) gene, DQB*HMS1 allele, exon 2 and partial cds
+141 bp linear DNA 
+AY007203.1 GI:10442809
+
+38. Monachus schauinslandi MHC class II antigen (DQB) gene, DQB*HMS2 allele, exon 2 and partial cds
+141 bp linear DNA 
+AY007204.1 GI:10442811
+
+39. Ursus thibetanus japonicus Urth-DQB mRNA for MHC class II antigen, partial cds, allele: Urth-DQB*01
+1,150 bp linear mRNA 
+AB473936.1 GI:297306756
+
+40. Ursus thibetanus japonicus Urth-DQB gene for MHC class II DQ beta 1 domain, exon 2, complete sequence, allele: Urth-DQB*0107
+270 bp linear DNA 
+AB763912.1 GI:433364475
+
+41. Ursus thibetanus japonicus Urth-DQB gene for MHC class II DQ beta 1 domain, exon 2, complete sequence, allele: Urth-DQB*0108
+270 bp linear DNA 
+AB763913.1 GI:433364477
+
+42. Ursus thibetanus japonicus Urth-DQB gene for MHC class II DQ beta 1 domain, exon 2, complete sequence, allele: Urth-DQB*0109
+270 bp linear DNA 
+AB763914.1 GI:433364479
+
+43. Ursus thibetanus japonicus Urth-DQB gene for MHC class II DQ beta 1 domain, exon 2, complete sequence, allele: Urth-DQB*0402
+270 bp linear DNA 
+AB763915.1 GI:433364481
+
+44. Ursus thibetanus japonicus Urth-DQB gene for MHC class II DQ beta 1 domain, exon 2, complete sequence, allele: Urth-DQB*0403
+270 bp linear DNA 
+AB763916.1 GI:433364483
+
+45. Ursus thibetanus japonicus Urth-DQB gene for MHC class II DQ beta 1 domain, exon 2, complete sequence, allele: Urth-DQB*1701
+270 bp linear DNA 
+AB763917.1 GI:433364485
+
+46. Ursus thibetanus japonicus Urth-DQB gene for MHC class II DQ beta 1 domain, exon 2, complete sequence, allele: Urth-DQB*1801
+270 bp linear DNA 
+AB763918.1 GI:433364487
+
+47. Ursus thibetanus japonicus Urth-DQB gene for MHC class II DQ beta 1 domain, exon 2, complete sequence, allele: Urth-DQB*1901
+270 bp linear DNA 
+AB763919.1 GI:433364489
+
+48. Ursus thibetanus japonicus Urth-DQB gene for MHC class II DQ beta 1 domain, exon 2, complete sequence, allele: Urth-DQB*2001
+270 bp linear DNA 
+AB763920.1 GI:433364491
+
+49. Ursus thibetanus japonicus Urth-DQB gene for MHC class II DQ beta 1 domain, exon 2, complete sequence, allele: Urth-DQB*2101
+270 bp linear DNA 
+AB763921.1 GI:433364493
+
+50. Ursus thibetanus japonicus Urth-DQB gene for MHC class II DQ beta 1 domain, exon 2, complete sequence, allele: Urth-DQB*2201
+270 bp linear DNA 
+AB763922.1 GI:433364495

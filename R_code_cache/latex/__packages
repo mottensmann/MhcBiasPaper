@@ -1,0 +1,14 @@
+base
+methods
+datasets
+utils
+grDevices
+graphics
+stats
+knitr
+ape
+ggplot2
+magrittr
+permute
+lattice
+vegan

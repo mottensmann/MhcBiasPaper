@@ -1,0 +1,1 @@
+Downloaded fasta files from NCBI genbank will be placed here

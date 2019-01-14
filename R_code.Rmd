@@ -1,0 +1,1852 @@
+---
+title: "Supplementary material for `TITLE OF MANUSCRIPT'"
+author: "Meinolf Ottensmann, Jan Sauer & Joseph I. Hoffman"
+output:
+    pdf_document: default
+includes:
+    in_header: \\usepackage[utf8]{inputnc}
+---
+
+```{r, echo = FALSE}
+library(knitr)
+knitr::opts_chunk$set(
+  fig.width = 5, fig.height = 5, highlight = TRUE,comment = ">",
+  strip.white = TRUE, collapse = TRUE, warning = FALSE, message = FALSE, fig.align = "center")
+options(width = 70)
+```
+
+# Preface
+
+This document provides the code for all major analyses presented in our paper. We recommend to download or clone this [GitHub repository](github.com/mottensmann/MhcBiasPaper) in order to access the documentation together with all files that are needed to repeat analyses. Just click on the link above and then on the green box `Clone or download`. In order to function properly, the same structure of folders must be kept. 
+If you have any questions, don´t hesitate contacting me: meinolf.ottensmann[at]web.de
+
+All processing steps that are based on scripts written in `unix` or `phyton` may be executed outside R using a suitable `Bash` command line depending on the operating system (e.g. `Bash on Ubuntu on Windows` worked well using Windows 10).
+Throughout, the working directory may be set to the parent folder of this project `MhcBiasPaper`, which contains all relevant data in subfolders.
+Additionally, several R packages that are not included in base R may be installed from `CRAN` or `Bioconductor`. Further functions are deposited in the subfolder `R` and sourced to the environment where needed.
+
+# Set up working environment
+
+Required R packages may be installed as follows:
+
+```{r, eval=FALSE, message=FALSE}
+install.packages("ggplot2")
+install.packages("vegan")
+install.packages("rdryad")
+install.packages("ape")
+install.packages("magrittr")
+source("http://bioconductor.org/biocLite.R")
+biocLite("biomaRt")
+```
+
+Required command line tools are listed below. Note, in order to function properly those programs need to be added to the `PATH` of the respective unix environment. Hints on the (sometimes tricky) installalation options are given on the websites indicated below.
+
+* `bedtools`: http://bedtools.readthedocs.io/en/latest/
+* `blast`: ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/
+* `hmmer-3.1b2`: http://hmmer.org/documentation.html
+* `mhc_
+* `muscle3.8.31`: http://www.drive5.com/muscle/manual/
+* `QIIME`: http://qiime.org/install/install.html)
+* `usearch v10`: http://drive5.com/usearch/
+* `Vsearch v.2.44`: https://github.com/torognes/vsearch/wiki/VSEARCH-pipeline
+
+
+Load R packages and a set of functions to the environment:
+
+```{r, message=FALSE}
+library(ape)
+library(ggplot2)
+library(magrittr)
+library(vegan)
+source("R/functions.R")
+```
+
+# Genomic organisation of fur seal MHC class II
+
+Genomic locations of MHC II like genes are determined by mapping published MHC II sequences to the Antarctic fur seal draft genome[^1] using the tool `NCBI BLAST`. The genome assembly is available at the European Nucleotide Archive (ENA) under BioProject ID [PRJEB26995](https://www.ncbi.nlm.nih.gov/bioproject/PRJEB26995/) and may be saved as `data/ArGa_genome.fasta` in order to repeat analyses shown here.
+
+[^1]: Humble E, Dasmahapatra KK, Martinez-Barrio A, Gregório I, Forcada J, Polikeit AC, Goldsworthy SD, Goebel ME, Kalinowski J, Wolf JB, Hoffman JI. RAD sequencing and a hybrid Antarctic fur seal genome assembly reveal rapidly decaying linkage disequilibrium, global population structure and evidence for inbreeding. G3: Genes, Genomes, Genetics. 2018 Aug 1;8(8):2709-22.
+
+After downloading the fasta file, a local BLAST database may be compiled based on the genome assembly.
+
+```bash
+## bash
+
+# make BLAST database
+makeblastdb
+-in data/ArGa_genome.fasta -dbtype nucl 
+-out blast/db/ArGa_Genome_db
+```
+
+Next, reference MHC II second exon sequences are downloaded from [NCBI Genbank](https://www.ncbi.nlm.nih.gov/)
+
+```{r, eval=FALSE}
+# accession numbers of representative MHC II exon 2 sequences
+# DQA, DQB, DRA & DRB 
+
+accession.info <- 
+  read.csv("data/MHC_ref_exon2.csv")
+
+ape::read.GenBank(
+  access.nb = accession.info[[1]]) %>%
+  set_names(paste0(accession.info[[2]],"_", names(.))) %>%
+  ## write to fasta file
+  ape::write.dna(file = file.path("blast/seq/", "MHC_ref_exon2.fasta"),
+                 format = "fasta")
+```
+
+
+These sequences are now mapped to the genome using `blastn`
+
+```bash
+# bash
+blastn  -db blast/db/ArGa_Genome_db 
+-outfmt 6 
+-evalue 1e-8 
+-word_size 7 
+-query blast/genbank/MHC_ref_exon2.fasta 
+-out data/MHC_ref_exon2ArGa_genome.txt
+```
+
+The BLAST results clearly indicate the presence of single DQA-like and DQB-like loci and duplicated loci with similariy to DRA and DRB like genes respectively. Note, due to high inter-locus similarity searches with DRB as a query do also return the putative DQB match and *vice versa*. However, differences in alignment length and identity allow to assign sequences to loci with good confidence.
+
+```{r}
+blast_results <- read.table(file = "data/MHC_ref_exon2ArGa.txt", header = F) %>%
+  set_colnames(., value = c("qseqid", "sseqid", "pident", "length", "mismatch", "gaps",
+                            "qstart", "qend", "sstart", "send", "evalue", "bitscore"))
+
+knitr::kable(blast_results[,-(11:12)], align = "c", caption = "BLAST Hits",
+             row.names = T)
+```
+
+From the ouput shown above, genomic sequences from the respective scaffold are next extracted. 
+
+```{r, eval = FALSE}
+## exctract hits from the genome plus flanking sequence
+bed <- extract_hits(file = "data/MHC_ref_exon2ArGa.txt",
+                    file.out = "blast/hits/MHC_ref_exon2ArGa.bed",
+                    rows = c(1, 3, 12, 13, 26, 27))
+```
+
+```bash
+# bash
+
+# convert to unix
+dos2unix blast/hits/MHC_ref_exon2ArGa.bed
+
+# get sequences
+bedtools getfasta 
+-fi data/ArGa_Genome.fasta 
+-bed blast/hits/MHC_ref_exon2ArGa.bed 
+-fo blast/seq/MHC_ref_exon2ArGa.fasta
+```
+
+When matches are in plus-minus orientation, the sequences are reverse complemented. 
+
+```{r, eval = FALSE}
+# read fasta
+seq_exon <- ShortRead::readFasta("blast/seq/MHC_ref_exon2ArGa.fasta")
+
+# add locus to fasta id
+header_exon <- seq_exon@id %>%
+  as.character() %>%
+  paste0(c("DQA", "DQB", "DRA", "DRA", "DRB", "DRB"), "_", .)
+
+# reverse complement all 'minus' matches    
+seq_exon <- as.character(seq_exon@sread)
+
+for (x in which(bed[,7] == "minus")) {
+  seq_exon[x] <- revcomp_seq(seq_exon[x])
+}
+
+# save as fasta file
+seqinr::write.fasta(sequences = as.list(seq_exon),
+                    names = header_exon,
+                    file.out = "blast/seq/MHC_ref_exon2ArGa_oriented.fasta")
+```
+
+# Primer development
+
+In order to develop species-specific primer pairs for the amplification of full-length second exon sequences of DQB, the genomic target will be extracted in conjunction with adequate flanking sequences for the placement of primers in the intron regions flaning the second exon. 
+
+
+```{r, eval = FALSE}
+# get template for DQB exon 2
+bed <- extract_hits(file = "data/MHC_ref_exon2ArGa.txt",
+                    file.out = "blast/seq/ArGa_Genome_DQB.bed",
+                    flanking = 150,
+                    rows = 3)
+```
+
+```bash
+dos2unix blast/seq/ArGa_Genome_DQB.bed
+bedtools getfasta 
+-fi data/ArGa_Genome.fasta 
+-bed blast/seq/ArGa_Genome_DQB.bed
+-fo blast/seq/ArGa_Genome_DQB.fasta
+```
+
+Primers were designed using [Primer3Plus](http://www.bioinformatics.nl/cgi-bin/primer3plus/primer3plus.cgi) by uploading the fasta file `blast/seq/ArGa_Genome_DQB.fasta` as to pick oligonucleotide primers. The Target informatation below denotes the entire second exon region of DQB:
+
+* Contig48:1936919-1937488
+* TARGET: 1937069-1937338
+
+## Test specifity of primers
+
+### Blasting against the genome
+
+In order to ensure primers sequences are locus-specific, we mapped them to the genome.
+
+```bash
+blastn 
+-db blast/db/ArGa_Genome_db 
+-outfmt 6 
+-evalue 10 
+-word_size 14 
+-query data/DQB-primer.fasta 
+-out blast/hits/DQB-primer2ArGa_genome.txt
+```
+
+The table below shows all *in silico* amplified sequences (i.e. there are matches for both the forward and the reverse primer on the same contig. Here, only the targeted locus allows perfect primer binding.
+
+```{r}
+knitr::kable(primer_check(
+  Blast = "blast/hits/DQB-primer2ArGa_genome.txt",threshold = NULL))
+```
+# DQB sequencing data processing
+
+The DQB library was created and sequenced as outlined in the main text of the manuscript. In brief, samples were pooled and sequenced on a single Illumina MiSeq run. A unique combination of barcodes added to forward and reverse primer respectively, allowed to demultiplex the data afterwards.
+
+## Start processing MiSeq reads
+
+```bash
+# bash
+#######################################################################################
+# Prerequisites:                                                                      #
+#                                                                                     #
+# 'mhc_cluster' needs to be downloded from https://github.com/mottensmann/mhc_cluster #
+# Ist recommended to save the folder in the same folder as MhcBiasPaper               #
+# and added to the 'PATH' variable.                                                   #
+# Vsearch v.2.44, hmmer-3.1b2, usearch10, muscle3.8.31 are expected to be in 'PATH'   #
+#                                                                                     #
+# Folder that are missing in the PATH can be added using the following notation       #
+# where '~' gives the path starting from the root.                                    #
+# Example: export PATH="~/mhc_cluster:$PATH"                                          #       
+# Here, QIIME is assumed to be part of the conda environment                          #
+# Raw reads may be downloaded as zip archieves and saved in a subfolder raw_reads     #
+#######################################################################################
+
+## Set directory
+## -------------
+cd MiSeq/
+
+## create hidden markov model
+## --------------------------
+hmmbuild hmm/seal_dqb.hmm hmm/seal_dqb.fas ;
+
+## create auxilariy files for hmmscan
+## ----------------------------------
+hmmpress hmm/seal_dqb.hmm ;
+
+## copy to folder lib in repository mhc_cluster
+## --------------------------------------------
+cd hmm/
+find -name "seal_dqb*" -print -exec cp {} ~/mhc_cluster/lib/ \;
+cd ..
+
+## Unzip raw reads
+## ---------------
+cd raw-reads
+find . -iname "*.gz" -exec gunzip {} \;
+cd ..
+
+## Extract and strip barcodes from reads 
+## --------------------------------------
+extract_barcodes.py --input_type barcode_paired_end 
+-f raw-reads/reads1.fastq -r raw-reads/reads2.fastq 
+--bc1_len 8 --bc2_len 8 -m dqb_barcodes.txt 
+-a -o parsed-barcodes/ ;
+
+
+## Trim ends: Choosen length maximises the number of successfully merged reads
+## ---------------------------------------------------------------------------
+fastx_trimmer -i parsed-barcodes/reads1.fastq -o parsed-barcodes/reads1.fastq -l 239 &
+fastx_trimmer -i parsed-barcodes/reads2.fastq -o parsed-barcodes/reads2.fastq -l 242 &
+
+## Merge pairs of reads with vsearch
+## ---------------------------------
+vsearch --fastq_mergepairs parsed-barcodes/reads1.fastq 
+--reverse parsed-barcodes/reads2.fastq 
+--fastqout merged-reads/merged.fastq --fastq_maxdiffs 5
+```
+
+### Filter assembled paired-end reads
+
+```{r, eval = FALSE}
+# Filter merged reads 
+filter_merged_reads(reads = "MiSeq/merged-reads/merged.fastq",
+                    barcodes = "MiSeq/parsed-barcodes/barcodes.fastq",
+                    mapping_file = "MiSeq/dqb_barcodes.txt",
+                    forward_primer = "GCTGTTGGTTGGGCTGAG",
+                    reverse_primer = "CCACCTCAGCAGGAACAGTG",
+                    max.mismatch = 0,
+                    with.indels = F,  
+                    suffix = "_filtered",
+                    illumina_adapter = "CTTGTA",
+                    pcr_size = 459)
+```
+
+### Clustering of alleles using pooled data
+
+```bash
+# bash
+## Truncate filtered to get only exon sequences
+## --------------------------------------------
+fastx_trimmer -i merged-reads/merged_filtered.fastq 
+-o merged-reads/merged_filtered_truncated.fastq -f 59 -l 326;
+
+## Truncate to get rid of low-quality tails
+## ----------------------------------------
+vsearch --fastq_filter merged-reads/merged_filtered_truncated.fastq 
+-fastqout merged-reads/merged_filtered_truncated_180.fastq 
+-fastq_trunclen 180;
+
+## Prepare second dataset comprising the partial 
+## sequence of Hoelzel, Stephens & O'Brien (1999) 
+## ----------------------------------------------
+vsearch --fastq_filter merged-reads/merged_filtered_truncated.fastq 
+-fastqout merged-reads/merged_filtered_truncated_141.fastq 
+-fastq_trunclen 142 &
+
+## Run MHC clustering pipeline
+## ---------------------------
+cluster_mhc2.py -f merged-reads/merged_filtered_truncated_180.fastq 
+-o clustered_reads/dqb_180
+-minsize 10
+
+cluster_mhc2.py -f merged-reads/merged_filtered_truncated_141.fastq 
+-o clustered_reads/dqb_141
+-minsize 10
+
+## Explore sensitivity to parameter alpha
+## --------------------------------------
+
+alpha=('0.0' '0.5' '1.0' '1.5' '2.0' '2.5' '3.0')
+for i in ${alpha[@]}
+do
+## Long fragment
+cluster_mhc2.py 
+-f merged-reads/merged_filtered_truncated_180.fastq 
+-o clustered-reads/alpha_exploration/dqb_180 -alpha $i  ;
+## short fragment
+cluster_mhc2.py 
+-f merged-reads/merged_filtered_truncated_141.fastq 
+-o clustered-reads/alpha_exploration/dqb_141 -alpha $i  ;
+done
+```
+### Clustering of alleles for individual amplicons
+
+```{r, eval = FALSE}
+# split reads in amplicons for the large fragment
+demultiplex_fastq(
+  reads = "MiSeq/merged-reads/merged_filtered_truncated_180.fastq",
+  out = "MiSeq/demultiplexed",
+  outname = "seq180.fastq")
+
+# repeat for short fragment
+demultiplex_fastq(
+  reads = "MiSeq/merged-reads/merged_filtered_truncated_141.fastq",
+  out = "MiSeq/demultiplexed",
+  outname = "seq141.fastq")
+```
+
+```bash
+# bash
+## Apply to samples individually
+## -----------------------------
+cd merged-reads/demultiplexed/
+alpha=('0.0' '0.5' '1.0' '1.5' '2.0' '2.5' '3.0')
+find . -mindepth 1 -maxdepth 1 -type d | while read d; do
+(cd $d/
+for i in ${alpha[@]}
+do
+cluster_mhc2.py -f seq_141.fastq -o dqb -alpha $i -cpus 2 -minsize 10.0;
+cluster_mhc2.py -f seq_181.fastq -o dqb -alpha $i -cpus 2 -minsize 10.0;
+done
+)  
+done
+cd ../
+```
+
+```{r, eval = FALSE}
+## Pool alleles of all individually processed amplicons
+file141 <- lapply(c("0.0", "0.5", "1.0", "1.5", "2.0", "2.5", "3.0"),
+                  function(x) {
+                    paste0("dqb_141_pct_1.0_a_", x, "_ee_1.0.fixed.otus.fa")
+                  }) %>%
+  unlist()
+
+file180 <- lapply(c("0.0", "0.5", "1.0", "1.5", "2.0", "2.5", "3.0"),
+                  function(x) {
+                    paste0("dqb_180_pct_1.0_a_", x, "_ee_1.0.fixed.otus.fa")
+                  }) %>%
+  unlist()
+
+lapply(c(file141, file180), function(x) {
+  pool_zotus(parentfolder = "MiSeq/demultiplexed",
+             filen = x)})
+```
+
+```bash
+# bash
+## Cluster alleles based on individually identified Zotus
+## ------------------------------------------------------
+
+## long fragment
+cluster_against_db.py -f merged-reads/merged_filtered_truncated_180.fastq 
+-ref demultiplexed/dqb_180_pct_1.0_a_0.0_ee_1.0.pooled.otus.fa 
+-o reference-based/dqb180_0.0 -cpus 1;
+cluster_against_db.py -f merged-reads/merged_filtered_truncated_180.fastq 
+-ref demultiplexed/dqb_180_pct_1.0_a_0.5_ee_1.0.pooled.otus.fa 
+-o reference-based/dqb180_0.5 -cpus 1;
+cluster_against_db.py -f merged-reads/merged_filtered_truncated_180.fastq 
+-ref demultiplexed/dqb_180_pct_1.0_a_1.0_ee_1.0.pooled.otus.fa 
+-o reference-based/dqb180_1.0 -cpus 1;
+cluster_against_db.py -f merged-reads/merged_filtered_truncated_180.fastq 
+-ref demultiplexed/dqb_180_pct_1.0_a_1.5_ee_1.0.pooled.otus.fa 
+-o reference-based/dqb180_1.5 -cpus 1;
+cluster_against_db.py -f merged-reads/merged_filtered_truncated_180.fastq 
+-ref demultiplexed/dqb_180_pct_1.0_a_2.0_ee_1.0.pooled.otus.fa 
+-o reference-based/dqb180_2.0 -cpus 1;
+cluster_against_db.py -f merged-reads/merged_filtered_truncated_180.fastq 
+-ref demultiplexed/dqb_180_pct_1.0_a_2.5_ee_1.0.pooled.otus.fa 
+-o reference-based/dqb180_2.5 -cpus 1;
+cluster_against_db.py -f merged-reads/merged_filtered_truncated_180.fastq 
+-ref demultiplexed/dqb_180_pct_1.0_a_3.0_ee_1.0.pooled.otus.fa 
+-o reference-based/dqb180_3.0 -cpus 1;
+
+## short fragment
+cluster_against_db.py -f merged-reads/merged_filtered_truncated_141.fastq 
+-ref demultiplexed/dqb_141_pct_1.0_a_0.0_ee_1.0.pooled.otus.fa 
+-o reference-based/dqb141_0.0 -cpus 1;
+cluster_against_db.py -f merged-reads/merged_filtered_truncated_141.fastq 
+-ref demultiplexed/dqb_141_pct_1.0_a_0.5_ee_1.0.pooled.otus.fa 
+-o reference-based/dqb141_0.5 -cpus 1;
+cluster_against_db.py -f merged-reads/merged_filtered_truncated_141.fastq 
+-ref demultiplexed/dqb_141_pct_1.0_a_1.0_ee_1.0.pooled.otus.fa 
+-o reference-based/dqb141_1.0 -cpus 1;
+cluster_against_db.py -f merged-reads/merged_filtered_truncated_141.fastq 
+-ref demultiplexed/dqb_141_pct_1.0_a_1.5_ee_1.0.pooled.otus.fa 
+-o reference-based/dqb141_1.5 -cpus 1;
+cluster_against_db.py -f merged-reads/merged_filtered_truncated_141.fastq 
+-ref demultiplexed/dqb_141_pct_1.0_a_2.0_ee_1.0.pooled.otus.fa 
+-o reference-based/dqb141_2.0 -cpus 1;
+cluster_against_db.py -f merged-reads/merged_filtered_truncated_141.fastq 
+-ref demultiplexed/dqb_141_pct_1.0_a_2.5_ee_1.0.pooled.otus.fa 
+-o reference-based/dqb141_2.5 -cpus 1;
+cluster_against_db.py -f merged-reads/merged_filtered_truncated_141.fastq 
+-ref demultiplexed/dqb_141_pct_1.0_a_3.0_ee_1.0.pooled.otus.fa 
+-o reference-based/dqb141_3.0 -cpus 1;
+```
+
+```{r, eval=F}
+# Remove temporary files
+remove_mhc_cluster_files(
+  parentfolder = "MiSeq/demultiplexed/",
+  subfolder = T,
+  keep = c("seq180.fastq", "seq141.fastq", "fixed.otus.fa"))
+
+remove_mhc_cluster_files(
+  parentfolder = "MiSeq/clustered-reads/",
+  subfolder = T,
+  keep = c("\\.fixed.otus.fa",
+           "\\.otu_table.txt",
+           "\\.barcode.counts.txt"))
+
+remove_mhc_cluster_files(parentfolder = "MiSeq/reference-based",
+                         subfolder = F,
+                         keep = c("\\.fixed.otus.fa",
+                                  "\\.otu_table.txt",
+                                  "\\.barcode.counts.txt"))
+```
+
+
+# Analyse DQB data
+
+### Sensitivity to alpha value
+
+The impact of the parameter alpha on clustering results was systematically investigated using individual amplicons and pooled amplicons respectively. This anlysis allows to determine how robust allele classifications are given the choosen alpha value. For alpha = 0, only two alleles are retained after clustering. Therefore, allele detection using the DOC methods fails (i.e. no inflection point can be calculated). Respective datasets are not considered for the analysis.
+
+```{r, cache=TRUE, message=F}
+# select datasets
+fname <- lapply(c("0.0", "0.5", "1.0", "1.5", "2.0", "2.5", "3.0") , function(x) {
+  c(paste0("MiSeq/reference-based/dqb180_", x, "_pct_1.0"),
+    paste0("MiSeq/clustered-reads/alpha_exploration/dqb_180_pct_1.0_a_", x, "_ee_1.0"),
+    paste0("MiSeq/reference-based/dqb141_", x, "_pct_1.0"),
+    paste0("MiSeq/clustered-reads/alpha_exploration/dqb_141_pct_1.0_a_", x, "_ee_1.0"))
+}) %>%
+  unlist()
+
+## genotype in order to classify allele status
+out <-
+  lapply(fname,
+         run_genotyping,
+         locus = "dqb",
+         gain = 0.05,
+         doc_min = 45,
+         depth_min = 0.75)
+
+## add alpha values 
+names(out) <-
+  paste0("Alpha", rep(seq(0,3,0.5), each = 4))
+
+## merge results 
+df <- lapply(out, function(x) {
+  reshape2::melt(x[["zotu_summary"]])
+}) %>%
+  do.call("rbind",.)
+
+## set up data frame
+# 3 factors * 2 conditions *2 frament sizes
+df$alpha <- 
+  rep(seq(0,3,0.5), each = 3*2*2) 
+df$group <- 
+  rep(rep(c("Individually", "Pooled"), each = 3), nrow(df)/6)
+
+## add framgent sizes
+df$fragment <-
+  as.factor(rep(rep(c("180 bp","141 bp"), each = 6), 7)) %>%
+  factor(., levels = c("180 bp", "141 bp"))
+
+## make levels look nicer
+levels(df$variable)[levels(df$variable) == "putative_artefact"] <-
+  "Putative Artefact"
+levels(df$variable)[levels(df$variable) == "putative_allele"] <- 
+  "Putative Allele"
+
+# sort factors
+df$variable <-
+  factor(df$variable, levels = c("Artefact", "Putative Artefact", "Putative Allele"))
+
+## make plot
+plot1_alpha <-
+  ggplot(df, aes(x = alpha, y = value, fill = variable)) +
+  geom_col(colour = "black") +
+  theme_bw(base_size = 16) +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.position = "bottom") +
+  facet_wrap(~group + fragment, ncol = 2) +
+  ylab("Total number of variants") +
+  xlab(bquote("UNOISE2" ~ alpha)) +
+  scale_fill_manual(values = c("#fdcc8a", "#fc8d59", "#d7301f")) +
+  # scale_fill_brewer(palette = "Oranges") +
+  guides(fill = guide_legend(title = "")) +
+  scale_y_continuous(expand = c(0,1),
+                     breaks = seq(0,60,5)) +
+  scale_x_continuous(expand = c(0.05,0),
+                     breaks = seq(0,5,0.5)) 
+
+plot1_alpha
+
+ggsave(filename = "figures/plot1_alpha.tiff",
+       plot = plot1_alpha,
+       device = "tiff",
+       dpi = 300,
+       width = 6,
+       height = 9,
+       units = "in")
+```
+
+### Read and process clustering results
+
+```{r}
+## choose data obtained from pooled sequences at alpha = 2.0
+fname <- c("MiSeq/clustered-reads/dqb_180_pct_1.0_a_2.0_ee_1.0",
+           "MiSeq/clustered-reads/dqb_141_pct_1.0_a_2.0_ee_1.0")
+dqb_data <- lapply(fname, process_otus, locus = 'dqb') %>% 
+  set_names(., value = c("180 bp", "141 bp"))
+```
+
+### Correlation between reads counts
+
+```{r, eval=FALSE}
+## relate filtered read depth to total sequence number
+lm_fit <- with(dqb_data$bc_counts, lm(Filtered_total~Raw_total))
+
+## correlation 
+with(dqb_data$bc_counts, cor.test(Filtered_total, Raw_total))
+
+## check barcode quality among amplicons
+plot2_barcode_quality <- 
+  ggplot(dqb_data$bc_counts, aes(x = Raw_total/1000, y = Filtered_total/1000)) +
+  geom_point() +
+  geom_abline(intercept = lm_fit$coefficients[[1]]/1000,
+              slope = lm_fit$coefficients[[2]],
+              linetype = "dashed",
+              col = "blue") +
+  geom_abline(intercept = 0,
+              slope = 1) +
+  theme_classic(base_size = 14) +
+  theme(plot.title = element_text(hjust = 0.5),
+        aspect.ratio = 1) +
+  xlab("Total reads") +
+  ylab("High quality reads") +
+  scale_x_continuous(
+    expand = c(0,0),
+    limits = c(0, floor(max(dqb_data$bc_counts$Raw_total)/1000)),
+    breaks = seq(0,floor(max(dqb_data$bc_counts$Raw_total)/1000),10),
+    labels = paste0(seq(0,floor(max(dqb_data$bc_counts$Raw_total)/1000),10),"k"))  +
+  scale_y_continuous(
+    expand = c(0,0),
+    limits = c(0, floor(max(dqb_data$bc_counts$Raw_total)/1000)),
+    breaks = seq(0,floor(max(dqb_data$bc_counts$Raw_total)/1000),10),
+    labels = paste0(seq(0,floor(max(dqb_data$bc_counts$Raw_total)/1000),10),"k")) 
+plot2_barcode_quality
+
+## relate mapped read depth to total sequence number
+lm_fit <- with(dqb_data$bc_counts, lm(mapped~Raw_total))
+
+## correlation 
+with(dqb_data$bc_counts, cor.test(mapped, Raw_total))
+
+plot3_barcode_mapping <- 
+  ggplot(dqb_data$bc_counts, aes(x = Raw_total/1000, y = mapped/1000)) +
+  geom_point() +
+  geom_abline(intercept = lm_fit$coefficients[[1]]/1000,
+              slope = lm_fit$coefficients[[2]],
+              linetype = "dashed",
+              col = "blue") +
+  geom_abline(intercept = 0,
+              slope = 1) +
+  theme_classic(base_size = 14) +
+  theme(plot.title = element_text(hjust = 0.5),
+        aspect.ratio = 1) +
+  xlab("Total reads") +
+  ylab("Mapped reads") +
+  scale_x_continuous(
+    expand = c(0,0),
+    limits = c(0, floor(max(dqb_data$bc_counts$Raw_total)/1000)),
+    breaks = seq(0,floor(max(dqb_data$bc_counts$Raw_total)/1000),10),
+    labels = paste0(seq(0,floor(max(dqb_data$bc_counts$Raw_total)/1000),10),"k")) +
+  scale_y_continuous(
+    expand = c(0,0),
+    limits = c(0, floor(max(dqb_data$bc_counts$Raw_total)/1000)),
+    breaks = seq(0,floor(max(dqb_data$bc_counts$Raw_total)/1000),10),
+    labels = paste0(seq(0,floor(max(dqb_data$bc_counts$Raw_total)/1000),10),"k"))
+plot3_barcode_mapping
+```
+
+### Assing genotypes to individuals
+
+For almost all individuals sequences are assigned to each of the clustered alleles. This is expected for the followign reasons:
+
+* Cross-talk/ tag switching during sequencing
+* Spurios reads caused by sequencing and PCR error
+* Cross-amplicon contamination
+
+For these reasons, genotyping requires to separate true alleles from artefacts. True alleles are expected to be more common than any of the spurious reads present in a given amplicon. This motivates to use the degree of change (DOC) approach suggested by [^2] that determines inflection points in the cumulative sequencing depth. In contast to commonly used methods that are based on the sequencing depth [^3][^4], this approach does not rely on any arbitrary cut-off value but directly tests the main genotyping assumption outlined above. 
+
+[^2]: Lighten J, Van Oosterhout C, Bentzen P. Critical review of NGS analyses for de novo genotyping multigene families. Molecular ecology. 2014 Aug;23(16):3957-72.
+[^3]: Babik W, Taberlet P, Ejsmond MJ, Radwan J. New generation sequencers as a tool for genotyping of highly polymorphic multilocus MHC system. Molecular ecology resources. 2009 May;9(3):713-9.
+[^4]: Galan M, Guivier E, Caraux G, Charbonnel N, Cosson JF. A 454 multiplex sequencing method for rapid and reliable genotyping of highly polymorphic genes in large-scale studies. BMC genomics. 2010 Dec;11(1):296.
+
+```{r}
+## Calculate cumulative sequencing depth for every amplicon.
+## Then, call alleles and assign quality class.
+genotypes_list <- lapply(dqb_data, function(x) {
+  apply(x[["otu_tab"]], 2,
+        get_genotypes,
+        names = rownames(x[["otu_tab"]]),
+        gain = 0.05,
+        doc_min = 45,
+        depth_min = 0.75) 
+}) 
+
+## get cumulative sums
+genotypes_df <- lapply(genotypes_list, function(x) {
+  out <- do.call("rbind", lapply(x, function(fx) fx[["coord"]])) %>%
+    subset(., quality == "High")
+  out[["group"]] <- as.factor(out[["group"]])
+  out
+})
+
+## Calculate mean relative cumulative sequencing depth
+df <- lapply(genotypes_df, summary_stats, measurevar = "y", groupvars = c("x", "group"))
+
+qual <- lapply(genotypes_list, function(y) lapply(y, function(x) x[["df"]][[6]]))
+lapply(qual, function(x) summary(unlist(x)))
+
+# add point x = 0, y = 0 for visualisation
+df_head <- lapply(1:length(fname), function(x) {
+  out <- matrix(0, 
+                nrow = length(levels(df[[x]]$group)),
+                ncol = ncol(df[[x]])) %>%
+    as.data.frame() %>%
+    set_colnames(., value =  colnames(df[[x]]))
+  out[["group"]] <- 1:nrow(out)
+  out
+})
+
+df <- lapply(1:length(fname), function(x) {
+  out <- rbind(df_head[[x]], df[[x]])
+  out[["dataset"]] <- rep(names(dqb_data)[x], nrow(out))
+  out
+}) %>%
+  set_names(names(dqb_data))
+
+## Get mean depth for all allele number configurations
+df_dashes <- lapply(1:length(fname), function(fx) {
+  out <- data.frame(x = 1:length(unique(df[[fx]]$group)),
+                    group = unique(df[[fx]]$group),
+                    dataset = names(dqb_data)[fx],
+                    y = lapply(unique(df[[fx]]$group), function(x) {
+                      df[[fx]]$y[df[[fx]]$group == x & df[[fx]]$x == x]
+                    }) %>% 
+                      unlist())
+})
+
+## Merge lists to dataframe for plotting
+df_plot <- do.call("rbind", df) 
+df_dashes_plot <- do.call("rbind", df_dashes)
+
+
+plot4_cumul_depth <- ggplot(df_plot, aes(x = x, y = y, col = group)) +
+  geom_point(size = 1.75) +
+  geom_line(size = 1) +
+  geom_segment(data = df_dashes_plot, 
+               aes(xend = x, yend = 0),
+               linetype = "dotted",
+               size = 1) +
+  theme_bw(base_size = 14) +
+  theme(aspect.ratio = 1,
+        legend.position = "none") +
+  xlab("Number of alleles") +
+  ylab("Cumulative sequencing depth [%]") +
+  scale_y_continuous(expand = c(0,0),
+                     breaks = seq(0,100,10)) +
+  scale_x_continuous(expand = c(0,0),
+                     breaks = 0:8) +
+  scale_color_brewer(palette = "Set2") +
+  facet_wrap(~dataset)
+plot4_cumul_depth
+
+## export plots for each sample
+genotypes <- lapply(1:length(fname), function(x) {
+  out <- apply(dqb_data[[x]][["otu_tab"]], 2, get_genotypes,
+               names = rownames(dqb_data[[x]][["otu_tab"]]),
+               plot = T)
+  for (i in 1:length(out)) {
+    out[[i]] <- out[[i]] + ggtitle(names(out)[i])
+  }
+  
+  pdf(paste0("MiSeq/figures/genotypes_DOC", names(dqb_data)[x], ".pdf"))
+  for (i in  1:length(out)) print(out[[i]])
+  dev.off()
+}) 
+
+## Summarise by amplicon sequencing depth
+sequencing_depth <- lapply(1:length(fname), function(fx) {
+  out <- do.call("rbind", lapply(genotypes_list[[fx]], function(x) x[["df"]])) %>%
+    as.data.frame()
+  out$dataset <- rep(names(df)[fx], nrow(out))
+  out
+}) %>%
+  set_names(value = names(df))
+
+sequencing_depth_plot <- do.call("rbind", sequencing_depth)
+
+
+plot5_amplicon_quality <- ggplot(sequencing_depth_plot, aes(x = quality, y = total_depth)) +
+  geom_boxplot() +
+  theme_classic(base_size = 14) +
+  xlab("Amplicon quality") +
+  ylab("Log total sequencing depth") +
+  scale_y_log10() +
+  facet_wrap(~dataset)
+plot5_amplicon_quality
+
+allele_num_df <- lapply(1:length(fname), function(fx) {
+  out <- lapply(genotypes_list[[fx]], function(x) x[["df"]]) %>%
+    do.call("rbind",.) %>%
+    subset(., quality == "High")
+  out$row <- rownames(out)
+  out$dataset <- rep(names(df)[fx], nrow(out))
+  out
+}) %>%
+  set_names(names(df))
+
+allele_num_df_plot <-
+  do.call("rbind",allele_num_df)
+
+
+plot6_allele_num_depth <- 
+  ggplot(allele_num_df_plot, 
+         aes(x = as.factor(n_alleles), y = total_depth,
+             fill = as.factor(n_alleles))) +
+  geom_boxplot() +
+  scale_fill_brewer(palette = "Paired") +
+  theme_bw(base_size = 14) +
+  theme(legend.position = "none") +
+  xlab("Number of alleles") +
+  ylab("Total sequencing depth") +
+  facet_wrap(~dataset)
+plot6_allele_num_depth
+
+
+lapply(sequencing_depth, function(x) {
+  with(x, wilcox.test(total_depth~quality))
+})
+lapply(allele_num_df, function(x) {
+  with(x, kruskal.test(total_depth~n_alleles))
+  with(x, pgirmess::kruskalmc(total_depth~n_alleles))
+})
+
+
+```
+
+
+The above boxplot shows that there is no signifcant linear trend of increasing number of allels with respect to the total sequencing depth. However, theres is a clear different in accordance with one or two amplified loci.
+
+### Exploring potential bias by variation in sequencing depth
+
+The function `vegan::rarefy` gives the expected species richness in random subsamples of size sample and therefore allows to test if variation in sequencing depth could have an effect on the detection of alleles.
+
+```{r}
+## get sequence counts of high quality amplicons
+otu_table <- lapply(1:length(fname), function(x) {
+  dqb_data[[x]]$otu_tab[rownames(allele_num_df[[x]][allele_num_df[[x]]$quality == "High",])] %>%
+    t()
+}) %>% 
+  set_names(names(dqb_data))
+
+## Call alleles for the final dataset
+called_alleles <- lapply(1:length(fname), function(x) {
+  apply(otu_table[[x]], 1, function(x) {
+    out <- get_genotypes(x,
+                         gain = 0.05,
+                         doc_min = 45,
+                         depth_min = 0.75)
+    out[["alleles"]]
+  })
+}) %>%
+  set_names(names(dqb_data))
+
+## save for later use
+save(called_alleles, file = "MiSeq/RData/called_alleles.RData")
+
+## Rarefy to minimum depth 
+df <- lapply(1:length(fname), function(x) {
+  data.frame(
+    obs = unlist(lapply(called_alleles[[x]], length)),
+    rarefied = rarefaction(m = otu_table[[x]],
+                           n = min(rowSums(otu_table[[x]])),
+                           gain = 0.05,
+                           doc_min = 45,
+                           depth_min = 0.75),
+    dataset = names(dqb_data)[x])
+}) %>%
+  do.call("rbind",.)
+
+## summarise
+df_sum <- summary_stats(df, measurevar = "obs", groupvars = c("rarefied", "dataset"))
+
+## kendall´s tau
+with(df_sum, cor.test(obs, rarefied, method = "kendall"))
+
+plot8_rarefied_depth <-
+  ggplot(df_sum, aes(x = obs, y = rarefied, size = N)) +
+  geom_point(col = "blue") +
+  scale_size(range = c(4, 6), 
+             limits = range(df_sum$N),
+             breaks = unique(df_sum$N),
+             name = "N") +
+  geom_abline(intercept = 0, slope = 1,
+              linetype = "dashed") +
+  theme_bw(base_size = 14) +
+  xlab("Observed number of alleles") +
+  ylab("Rarefied number of alleles") +
+  scale_x_continuous(breaks = seq(0,10,1)) +
+  scale_y_continuous(breaks = seq(0,10,1)) +
+  facet_wrap(~dataset)
+plot8_rarefied_depth
+```
+
+### Barplot of amplicon sequencing depth and assigned quality
+
+```{r, eval = FALSE}
+df <- lapply(1:length(fname), function(x) {
+  out <- dqb_data[[x]]$bc_counts[,c("pos", "mapped")]
+  out$grp <- ifelse(out$pos %in% names(called_alleles[[x]]), 'High', 'Low')
+  out$pos <- factor(out$pos, levels =  as.character(out$pos))
+  out$dataset <- rep(names(dqb_data[x]), nrow(out))
+  out
+}) %>%
+  do.call("rbind",.)
+
+plot9_retained_samples <- ggplot(df, aes(x = pos, y = mapped, fill = grp)) +
+  geom_bar(stat = "identity", colour = "black") +
+  theme_bw(base_size = 14) +
+  xlab("Sample position") +
+  ylab("Sequencing depth") +
+  scale_fill_manual(values = c("#377EB8", "#E41A1C")) +
+  theme(axis.text.x =  element_blank()) +
+  guides(fill = guide_legend(title = "Amplicon quality")) +
+  facet_wrap(~dataset)
+plot9_retained_samples
+```
+
+### Distribution of alleles
+
+```{r}
+df <- lapply(1:length(fname), function(x) {
+  unlist(called_alleles[[x]]) %>%
+    as.factor() %>%
+    summary()
+}) %>%
+  set_names(names(dqb_data))
+
+allele_order <- lapply(1:length(fname), function(x){
+  lapply(names(df[[x]]), function(x) strsplit(x, split = "Zotu")[[1]][2]) %>%
+    unlist()  %>%
+    as.numeric() %>%
+    order(., decreasing = F)
+})
+
+df <- lapply(1:length(fname), function(fx) {
+  out <- data.frame(x = names(df[[fx]]), y = df[[fx]])
+  out$x <- unlist(lapply(out$x, function(x) {
+    stringr::str_replace(x, "Zotu", "ArGa-DQB*")
+  }))
+  out$x <- factor(out$x, levels = out$x[allele_order[[fx]]])
+  out$z <- ifelse(out$y == 1,  "Potential artefact", "Putatitive allele") %>%
+    as.factor()
+  levels(out$z) <- c("Potential artefact", "Putatitive allele")
+  out$dataset <- names(dqb_data)[fx]
+  out
+}) %>% 
+  set_names(names(dqb_data))
+
+## prettier names for alleles
+newname <- function(x, split = "ArGa-DQB*") {
+  vec_x <- as.character(x) %>%
+    strsplit(., split, fixed = T) %>%
+    unlist() %>%
+    .[seq(2,length(.),2)]
+  temp <- which(nchar(vec_x) == 1)
+  vec_x[temp] <- paste0("0", vec_x[temp])
+  paste0(split, vec_x)
+}
+
+df <- lapply(df, function(x) {
+  levels(x[["x"]]) <- newname(levels(x[["x"]])) 
+  x
+})
+
+plot10_allele_freq <- lapply(df, function(df) {
+  ggplot(df, aes(x = x, y = y/sum(y), fill = z)) +
+    geom_bar(stat = "identity", colour = "black", size = 1.1) +
+    theme_bw(base_size = 14) +
+    theme(panel.grid = element_blank(),
+          legend.position = "bottom",
+          axis.text.x = element_text(angle = 90,
+                                     vjust = .5)) +
+    xlab("Allele") +
+    ylab("Allele Frequency") +
+    scale_y_continuous(expand = c(0,0.001),
+                       breaks = seq(0, max(df$y/sum(df$y)), by = 0.01)) +
+    scale_fill_brewer(palette = "Set1") +
+    guides(fill = guide_legend(title = "")) 
+  #+ coord_flip() 
+  #+  facet_wrap(~dataset) 
+})
+
+lapply(1:length(fname), function(x) {
+  ggsave(plot = plot10_allele_freq[[x]],
+         filename = paste0("figures/", "allele_freq_", names(dqb_data)[x],".tiff"),
+         device = "tiff",
+         width = 6,
+         height = 9,
+         units = "in",
+         dpi = 300)
+})
+
+plot10_allele_freq
+```
+
+
+### Replace rack positions by id names 
+
+```{r, eval = FALSE}
+## get mapping file
+load("MiSeq/RData/dqb_mapping_file.RData")
+dqb_mapping_file <- 
+  subset(dqb_mapping_file, as.character(pos) %in% names(called_alleles))
+## get factors
+factors <-
+  read.table(file = "data/factors.txt") %>%
+  subset(.,rownames(.) %in% dqb_mapping_file$Pair)
+## set pair id as rowname
+factors$Pair <- rownames(factors)
+
+## merge data sheets
+dqb_mapping_file <- dplyr::left_join(dqb_mapping_file, factors, by = "Pair")
+dqb_mapping_file$Pair <- paste0(dqb_mapping_file$Pair,"_" , 1:nrow(dqb_mapping_file))
+
+## substitute rack location by pair sample identifier
+called_alleles_renamed <- called_alleles 
+names(called_alleles_renamed) <- 
+  dqb_mapping_file$Pair[match(names(called_alleles),dqb_mapping_file$pos)]
+
+## get sample names
+samples <- lapply(names(called_alleles_renamed), function(x) strsplit(x, "_")[[1]][1])
+
+## find replicated samples
+replicated <- samples[duplicated(samples)]
+
+## randomly discard one sample of a pair of repliacates
+set.seed(999)
+remove <- numeric()
+for (i in 1:length(replicated)) remove[i] <- sample(which(samples == replicated[[i]]), 1)
+
+genotypes_dqb <- called_alleles_renamed[-remove]
+
+## remove name extensions
+names(genotypes_dqb) <- 
+  lapply(names(genotypes_dqb), function(x) strsplit(x, "_")[[1]][1]) %>%
+  unlist()
+
+save(genotypes_dqb, file = "MiSeq/RData/genotypes_dqb.RData")
+```
+
+
+# Analysing alleles
+
+## Mapping alleles to Genome and Transcriptome
+
+Alleles map all to Contig 48. The top hit represents the expected location of the DQB locus, whereas the second best hit shows the DRB locus. Note, that only the top hit reaches a full-length alignment. Arga-DQB*10 is identical to the consensus sequence of the genome. 
+
+* Compile local BLAST database from the transcriptome assembly
+
+The transcriptome assembly is available as described in [^8] and may be saved as `data/ArGa_genome.fasta`
+
+[^8]: Humble E, Thorne MA, Forcada J, Hoffman JI. Transcriptomic SNP discovery for custom genotyping arrays: impacts of sequence data, SNP calling method and genotyping technology on the probability of validation success. BMC research notes. 2016 Dec;9(1):418.
+
+
+```bash
+## bash
+
+# make BLAST database
+makeblastdb
+-in data/ArGa_genome.fasta -dbtype nucl 
+-out blast/db/ArGa_Genome_db
+```
+
+```bash
+blastn 
+-db linux/db/arc_gaz_genome_db 
+-outfmt 6 
+-num_threads 8 
+-evalue 1e-8 
+-word_size 7 
+-query MiSeq/clustered_reads/dqb_pct_1.0_a_2.0.fixed.otus.fa 
+-out  MiSeq/fasta/dqb2_arc_gaz_genome.fasta
+
+blastn 
+-db linux/db/arc_gaz_transcriptome_db 
+-outfmt 6 
+-num_threads 8 
+-evalue 1e-8 
+-word_size 7 
+-query MiSeq/clustered_reads/dqb_pct_1.0_a_2.0.fixed.otus.fa 
+-out  MiSeq/fasta/dqb2_arc_gaz_transcriptome.fasta
+```
+
+```{r, eval=FALSE}
+read.table("MiSeq/fasta/dqb2_arc_gaz_genome.fasta")[28:34,c(1:4,9,10)] %>%
+  set_colnames(., value = c("Allele", "Contig","Identity","Alignment", "Start", "End")) %>%
+  head()
+```
+
+Alleles map to a single region of the assembled transcriptome.
+
+```{r, eval=FALSE}
+read.table("MiSeq/fasta/dqb2_arc_gaz_transcriptome.fasta")[,c(1:4,9,10)] %>%
+  set_colnames(., value = c("Allele", "Contig","Identity","Alignment", "Start", "End")) %>%
+  head()
+```
+
+## Investigate transcriptome reads for expression of alleles
+
+In order to check for evidence of gene expression for the newly characterised, alleles are mapped to raw
+transcriptome reads published by [^5]. These sequences are available as an archieve on Genbank under accession number SRA064103. Reads are available as separate files that will be firt downloaded and then merge into a single file that is ready to use for blasting. Here the maximum number of 45 alleles retained after clustering amplicons individually with (`r expression(alpha)` = 3.0) all 45 alleles that include 18 putative alleles, 3 putatitive artefacts and 24 sequences without support.
+
+[^5]: Hoffman JI, Thorne MA, Trathan PN, Forcada J. Transcriptome of the dead: characterisation of immune genes and marker development from necropsy samples in a free-ranging marine mammal. BMC genomics. 2013 Dec;14(1):52.
+
+```bash
+## bash
+cd DQB
+
+## Download 454 raw reads
+## ----------------------
+vdb-dump -f tab -C READ SRR646623 | awk '{print ">" "heart." NR "\n" $0}' 
+> heart.SRA064103.fasta &
+vdb-dump -f tab -C READ SRR646624 | awk '{print ">" "intestine." NR "\n" $0}' 
+> intestine.SRA064103.fasta & 
+vdb-dump -f tab -C READ SRR646625 | awk '{print ">" "kidney." NR "\n" $0}' 
+> kidney.SRA064103.fasta &
+vdb-dump -f tab -C READ SRR646626 | awk '{print ">" "lung." NR "\n" $0}' 
+> lung.SRA064103.fasta &
+vdb-dump -f tab -C READ SRR646627 | awk '{print ">" "spleen." NR "\n" $0}' 
+> spleen.SRA064103.fasta &
+vdb-dump -f tab -C READ SRR646628 | awk '{print ">" "testis." NR "\n" $0}' 
+> testis.SRA064103.fasta &
+
+## Merge files
+## -----------
+cat *.SRA064103.fasta > transcriptome_reads.fasta
+
+## Dereplicate alleles:
+## --------------------
+usearch10.exe -fastx_uniques arga_dqb.fasta -fastaout arga_dqb_uniques.fasta
+
+## Remove size annotation
+## ----------------------
+usearch10.exe -fastx_strip_annots arga_dqb_uniques.fasta -fastaout arga_dqb_derep.fasta
+
+## make blast database from allele sequences
+## -----------------------------------------
+makeblastdb -in arga_dqb_derep.fasta -dbtype nucl -out arga_dqb_db
+
+## Blast 454 reads to alleles
+## --------------------------
+blastn -db arga_dqb_db -outfmt 6 -num_threads 8 -evalue 1e-8 -word_size 7 -query transcriptome_reads.fasta -out transcriptome_reads.arga_dqb.txt &
+```
+
+```{r, eval=FALSE}
+blastn_output <-
+  read.table("DQB/transcriptome_reads.arga_dqb.txt")[,1:6] %>%
+  set_colnames(., value = c("Query", "Allele", "Similarity",
+                            "Length", "Mismatches", "Gaps")) %>%
+  subset(., Similarity >= 95 & Mismatches == 0 & Length >= 180)  
+
+seqs <- readFasta("DQB/transcriptome_reads.fasta")
+seqs <- seqs[which(id(seqs) %in% blastn_output$Query)]
+writeFasta(object = seqs,
+           file = "DQB/transcriptome_reads.arga_dqb.fasta")
+write.table(x = blastn_output, 
+            file = "DQB/transcriptome_reads.arga_dqb.hits.metafile.txt",
+            row.names = F)
+```
+
+```{r, eval = FALSE}
+expressed <- read.csv("DQB/expressed_arga_dqb.csv")
+expressed$Allele <- factor(expressed$Allele, levels = paste0("ArGa-DQB*", c(11,5,4,2,1)))
+
+plot11_gene_expression <-
+  ggplot(expressed, aes(x = Allele, y = 1, fill = Organ)) +
+  geom_bar(stat = "identity") +
+  theme_classic(base_size = 14) +
+  theme(aspect.ratio = 1,
+        axis.title = element_text(size = 14),
+        axis.text.y = element_text(size = 12),
+        axis.text.x =  element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.line.x = element_blank()) +
+  xlab("") +
+  ylab("") +
+  coord_flip() +
+  scale_fill_brewer(palette = "Set2")
+plot11_gene_expression
+```
+
+
+## Estimating differential amplification efficiencies across alleles
+
+In a study on MHC II DRB in a rodent, Sommer *et al.* [^6] have shown remarkable variation in the amplfication efficiencies differing by more than a magnitude among allele pairs. 
+
+[^6]: Sommer S, Courtiol A, Mazzoni CJ. MHC genotyping of non-model organisms using next-generation sequencing: a new methodology to deal with artefacts and allelic dropout. BMC genomics. 2013 Dec;14(1):542.
+
+```{r}
+out <- lapply(1:length(otu_table), function(fx) {
+  otu_table_purified  <- purify_otus(x = otu_table[[fx]],
+                                     y = called_alleles[[fx]])
+  ## number of alleles
+  nb.alleles <- ncol(otu_table_purified)
+  
+  ## efficiency prior, all are equal i.e. 1
+  efficiency_prior <- rep(1, nb.alleles)
+  
+  ## Fit relative efficiencies based on Loglikelyhood
+  efficiency_obs_rel <- optim(par = efficiency_prior,
+                              fn = LoglikData,
+                              data = otu_table_purified,
+                              control = list(fnscale = -1),
+                              method = "L-BFGS-B",
+                              lower = rep(0.1, nb.alleles), 
+                              upper = rep(6, nb.alleles))
+  
+  ## Standardise effiencies with respect to ArGa-DQB*1 
+  efficiency_obs_norm <- 
+    efficiency_obs_rel$par/efficiency_obs_rel$par[which(colnames(otu_table[[fx]]) == "Zotu1")]
+  
+  ## create a data frame
+  df <- data.frame(allele = colnames(otu_table[[fx]]),
+                   efficiency = efficiency_obs_norm)
+  df$allele <- factor(df$allele, levels = paste0("Zotu", 1:nrow(df)))
+  
+  levels(df$allele) <- gsub("Zotu", "ArGa-DQB*", levels(df$allele))
+  return(df)
+})
+
+plot12_amplification_efficiency <- lapply(1:length(out), function(fx) {
+  out <- ggplot(out[[fx]], aes(x = allele, y = efficiency)) +
+    geom_point() +
+    theme_classic() +
+    theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
+          text = element_text(size = 12)) +
+    xlab("Allele") + 
+    ylab("Standardised amplification efficiency") +
+    scale_y_continuous(breaks = seq(0,1,0.2),
+                       limits = c(0,1))
+  out
+})
+plot12_amplification_efficiency
+```
+
+## Allele detection curve
+
+```{r}
+seq_mat <- read.dna("data/Hoelzel-primer-alignment-ArGa-DQB.fas",
+                    format = "fasta") %>%
+  as.character() %>%
+  apply(.,2, toupper)
+
+primer <- seq_mat[1,]
+
+## remove primer
+seq_mat <- seq_mat[-1,]
+
+hamming_values <- data.frame(x = apply(seq_mat, 1, Hamming.dist, ref = primer, method = "abs") %>%
+                               unlist())
+
+glm_df <- data.frame(mismatches = hamming_values$x,
+                     binom = 0) 
+glm_df$binom[c(8,13,21)] <- 1
+glm_df <- glm_df[-c(15,19),] # variants not genotyped
+
+
+glm1 <- glm(binom ~ mismatches, family = binomial, data = glm_df)
+glm0 <- update(glm1, . ~ 1)
+
+anova(glm1, glm0, test = "Chisq")
+
+boxplot <- ggplot(glm_df, aes(x = as.factor(binom), y = mismatches, fill = as.factor(binom))) +
+  geom_boxplot() +
+  theme_classic(base_size = 14) +
+  xlab("Partial allele described in Hoelzel, Stephens & O'Brien (1999)") +
+  ylab("Mismatches in primer-binding sites") +
+  scale_fill_manual(values = c("darkblue", "Darkorange")) +
+  theme(legend.position = "none") +
+  annotate(x = 1, y = quantile(glm_df$mismatches[glm_df$binom == "0"] + .05, probs = .25),
+           geom = "text", label = "n = 16", color = "white", size = 5) +
+  annotate(x = 2, y = quantile(glm_df$mismatches[glm_df$binom == "1"] + .05, probs = .25),
+           geom = "text", label = "n = 3", color = "white", size = 5) +
+  annotate(x = 1.5, y = 4, geom = "text", label = "*", size = 8)
+
+boxplot
+
+ggsave(filename = "figures/Fig_glm.tiff",
+       device = "tiff",
+       dpi = 300,
+       width = 6,
+       height = 9,
+       units = "in")
+```
+
+
+```{r}
+sample_alleles <- function(data, n = 1:length(data), bs = 9999) {
+  x <- rep(n, each = bs)
+  y <- lapply(x, function(temp) {
+    get <- data[sample(x = 1:length(data),
+                       size = temp,
+                       replace = T)] %>%
+      unlist() %>%
+      unique() %>%
+      length()
+  }) 
+  
+  df <- data.frame(x = x,y = unlist(y))
+  df$x <- as.factor(df$x)
+  return(df)
+}
+
+simulate_hoelzel <- function(data, n = 1:length(data), bs = 999, 
+                             hamming = hamming_values, mismatch = 1) {
+  
+  hamming <- subset(hamming, x <= mismatch)
+  x <- rep(n, each = bs)
+  y <- lapply(x, function(temp) {
+    # sample genotypes
+    get <- data[sample(x = 1:length(data),
+                       size = temp,
+                       replace = T)] %>%
+      unlist() %>%
+      unique() 
+    # keep alleles with < mismatch differences
+    keep <- get[get %in% rownames(hamming)] %>%
+      length()
+  }) 
+  
+  df <- data.frame(x = x,y = unlist(y))
+  df$x <- as.factor(df$x)
+  return(df)
+}
+
+
+sampled_alleles_df <- lapply(called_alleles, sample_alleles)
+for (i in 1:length(sampled_alleles_df)) {
+  sampled_alleles_df[[i]]$dataset <- names(sampled_alleles_df)[i]
+}
+
+# sampled_alleles_df$x <- as.factor(sampled_alleles_df$x)
+sampled_alleles_df_comb <- do.call("rbind", sampled_alleles_df)
+
+df <- summary_stats(sampled_alleles_df_comb,
+                    measurevar = "y",
+                    groupvars = c("x","dataset"),
+                    conf.interval = 0.95)
+df$x <- as.numeric(as.character(df$x))
+
+plot13_allele_detection <- ggplot(df, aes(x,y)) +
+  geom_point(aes(col = dataset),  size = 2) + 
+  geom_linerange(ymin = df$y - df$sd, ymax = df$y + df$sd) +
+  theme_classic(base_size = 12) +
+  theme(aspect.ratio = 1,
+        axis.title = element_text(size = 16)) +
+  scale_color_brewer(palette = "Dark2") +
+  xlab("Sample size") +
+  ylab("Number of alleles") +
+  scale_x_continuous(breaks = seq(0,50,3)) 
+# scale_y_continuous(breaks = seq(0,21,1),
+#                    limits = c(0,21))
+plot13_allele_detection
+
+simulated_alleles_df <- lapply(0:max(hamming_values), function(x) {
+  simulate_hoelzel(data = called_alleles$`180 bp`,
+                   hamming = hamming_values,
+                   mismatch = x)
+})
+
+for (i in 1:length(simulated_alleles_df)) {
+  simulated_alleles_df[[i]]$mismatches <- as.character(i)
+}
+
+simulated_alleles_df <- do.call("rbind", simulated_alleles_df) 
+simulated_alleles_df$x <- as.numeric(as.character(simulated_alleles_df$x))
+
+df <- summary_stats(simulated_alleles_df,
+                    measurevar = "y",
+                    groupvars = c("x","mismatches"),
+                    conf.interval = 0.99)
+## add number of Hoelzel et al., 1999
+df[nrow(df) + 1, ] <- c(13, 99, 0, 4, 0, 0, 0) 
+df$x <- as.numeric(as.character(df$x))
+
+plot <- ggplot(df, aes(x,y)) +
+  geom_linerange(ymin = df$y - df$sd, ymax = df$y + df$sd,
+                 col = "grey0", alpha = 0.4) +
+  geom_point(aes(shape = mismatches),  size = 2.5) + 
+  theme_classic(base_size = 12) +
+  theme(aspect.ratio = 1,
+        axis.title = element_text(size = 16),
+        legend.position = "bottom") +
+  scale_shape_manual(labels = c("1 bp", "2 bp", "3 bp", "4 bp", "5 bp", "Hoelzel et al., 1999"),
+                     name = "",
+                     values = c(0, 15, 1, 16, 2, 10)) +
+  xlab("Sample size") +
+  ylab("Number of alleles") +
+  scale_x_continuous(breaks = seq(0,50,2)) +
+  scale_y_continuous(breaks = seq(0,21,1),
+                     limits = c(0,18.4)) 
+
+plot
+ggsave(filename = "figures/Fig_hoelzel_simul.tiff",
+       device = "tiff",
+       dpi = 300,
+       width = 6,
+       height = 9,
+       units = "in")
+
+``` 
+
+
+```{r, echo=FALSE}
+plots <- sapply(ls(pattern = "^plot"), get)
+pdf(paste0("MiSeq//figures/","Diagnostics.pdf"))
+silent <- lapply(plots, print)
+dev.off()
+```
+
+## Amino acid diversity
+
+```{r, eval=FALSE}
+# load alleles as protein sequences
+seq <- ape::read.dna(
+  file = "data/ArGa-DQB.fasta",
+  format = "fasta") %>%
+  ape::trans() %>%
+  as.character(.) %>%
+  as.matrix(.) %>%
+  set_colnames(., values = paste0("P",6:(ncol(x) + 5))) %>%
+  
+  # set gaps '-' to NA
+  if (any(seq == "-")) {
+    seq[which(seq == "-")] <-NA
+  }
+
+# calculate polymorphism per site
+v <- apply(seq, 2, shannon_entropy)
+
+# load indices of PBR sites
+pbr <- read.csv("data/pbr_residues.csv",
+                skip = 1,
+                header = F)
+
+pbr <- pbr[pbr <= 60]
+
+sites <- rep("Non-PBR", ncol(x))
+sites[pbr - 5] <- "PBR"
+
+df <- data.frame(x = 6:(ncol(x) + 5),
+                 y = v,
+                 residue = sites)
+
+plot <- ggplot(df, aes(x,y, fill = residue, col = residue)) +
+  geom_bar(stat = "identity") +
+  geom_point() +
+  geom_hline(yintercept = 1, linetype = "dashed") +
+  theme_classic(base_size = 14) +
+  scale_fill_manual(values = c("#377EB8", "#E41A1C")) +
+  scale_color_manual(values = c("#377EB8", "#E41A1C")) +
+  xlab("Amino acid Residue") +
+  ylab("Shannon entropy") +
+  scale_x_continuous(breaks = seq(6,66,10),
+                     limits = c(6,66),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0,2,0.25))
+
+plot
+```
+
+## Test for selection
+
+```{r}
+###
+df <- data.frame(
+  locus = rep(c("DQB", "DRB"), each = 6),
+  sub_rate = c(0.44, 0.89, 0.23, 0.05, 0.01, 0.07,
+               0.16,0.41,0.04,0.04,0,0),
+  se = c(0.01, 0.07, 0.02, 0.01, 0.01, 0.01,
+         0.01, 0.03, 0.01, 0.01, 0, 0),
+  unit = rep(c("Exon", "PBR", "non-PBR"), 4),
+  sub_type = rep(rep(c("dN","dS"), each = 3),2)
+  
+)
+
+
+library(ggplot2)
+p <- ggplot(df, aes(x = locus, y = sub_rate, fill = sub_type)) + 
+  geom_bar(stat = "identity", color = "black", 
+           position = position_dodge()) +
+  geom_errorbar(aes(ymin = sub_rate - se, ymax = sub_rate + se), width = .2,
+                position = position_dodge(.9)) +
+  theme_classic(base_size = 18) +
+  theme(legend.title = element_blank(),
+        legend.position = "n") +
+  scale_y_continuous(expand = c(0,0),
+                     breaks = seq(0,1,0.2),
+                     limits = c(0,1)) +
+  labs(title = "", x = "Locus", y = "Number of substitutions per site") +
+  facet_wrap(~unit)
+p
+```
+
+
+# Investigating amplification bias due to internal primers
+
+Many studies on MHC variability in pinnipeds characterised alleles using internal primers with binding sites within the hypervariable second exon region. The workflow below allows to access DQB exon 2 sequences of carnivores and to align them with previously used primer pairs. Studies and primer sequences are given in the manuscript.
+
+```{r, eval=FALSE}
+# accession numbers of representative MHC II DQB sequences
+
+accession.info <- 
+  read.table("data/carnivora_dqb_accession_list.txt", sep = "\t", header = T,
+             nrows = 149)
+
+ape::read.GenBank(
+  access.nb = accession.info[[1]]) %>%
+  set_names(paste0(accession.info[[2]],"_", names(.))) %>%
+  ## write to fasta file
+  ape::write.dna(file = file.path("blast/seq/", "carnivora_dqb_ref.fasta"),
+                 format = "fasta")
+
+## add ArGa-DQB alleles
+ape::read.dna(file = "data/ArGa-DQB-alleles.fasta",
+              format = "fasta") %>%
+  ape::write.dna(file = file.path("blast/seq/", "carnivora_dqb_ref.fasta"),
+                 format = "fasta",
+                 append = T)
+```
+
+Sequences were aligned and trimmed to the entire second exon region of 270 bp (267 coding nucleotides). Note: One reverse primer [^7] extends into the intron adjacent to the 3'-end of DQB. Thus, the last five nucleotides do not align to any of the DQB sequences. 
+
+[^7]: Cammen K, Hoffman JI, Knapp LA, Harwood J, Amos W. Geographic variation of the major histocompatibility complex in Eastern Atlantic grey seals (Halichoerus grypus). Molecular Ecology. 2011 Feb;20(4):740-52.
+
+```{r}
+# Get metadata (Taxonomic information for each sequence)
+meta_data <- read.table("data/carnivora_dqb_accession_list.txt", header = T, sep = "\t")
+
+# read fasta
+mat <- read.dna("data/Hoelzel-primer-alignment.fas",
+format = "fasta") %>%
+as.character() %>%
+apply(.,2, toupper)
+
+primer <- mat[1,]
+
+# remove primer
+mat <- mat[-1,]
+
+# calculate pairwise difference to primer, account for variable alignment length
+Hamming.dist <- function(seq, ref) {
+# discard gaps and binding N
+gaps <- which(seq %in% c("-", "N"))
+seqx <- seq[-gaps]
+refx <- ref[-gaps]
+
+# estimate diff
+diff <- 0
+for (i in 1:length(seqx))  diff <- diff + ifelse(seqx[i] == refx[i], 0, 1)
+# correct for sequence length
+ifelse(length(diff) > 0,diff/length(seqx), NA)
+}
+
+x <- data.frame(x = apply(mat, 1, Hamming.dist, ref = primer) %>%
+unlist())
+
+accession.nb <- strsplit(rownames(x), "_") %>%
+lapply(., function(fx) {
+ifelse(length(fx) == 2, fx[2], paste0(fx[2],"_", fx[3])) 
+}) %>%
+unlist()
+accession.nb[150:165] <- as.character(meta_data$accession.nb[150:165])
+
+# sort meta_data with respect to sequences
+meta_data2 <- meta_data[match(accession.nb, meta_data$accession.nb),]
+
+x$Taxon <- meta_data2$Taxon[meta_data2$accession.nb %in% accession.nb]
+
+df_pinnipedia <- x[x$Taxon == "Pinnipedia" & !is.na(x$x),]
+freq_dnorm <- function(...) dnorm(...) * 0.025# /sum(dnorm(...)) 
+
+a <- max(dnorm(mean = mean(df_pinnipedia$x),
+sd = sd(df_pinnipedia$x),
+x = seq(0,0.15,0.025)))*0.025
+
+# Histogram overlaid with kernel density curve
+ggplot(data = df_pinnipedia, aes(x = x)) + 
+geom_histogram(aes(y = 0.025 * ..density..),      # Histogram with freq
+binwidth = .025,
+colour = "black", fill = "darkblue") +
+stat_function(fun = freq_dnorm, colour = "darkorange", size = 1.5,
+args = list(mean = mean(df_pinnipedia$x, na.rm = TRUE),
+sd = sd(df_pinnipedia$x, na.rm = TRUE))) +
+theme_classic() +
+theme(axis.title = element_text(size = 16),
+axis.text = element_text(size = 12)) +
+xlab("Divergent sites [%]") +
+ylab("Proportion of sequences (n = 45)") +
+geom_segment(aes(x = mean(x), y = 0, 
+xend = mean(x), 
+yend = a),
+colour = "black",
+size = 1.2,
+linetype = "dashed") +
+scale_x_continuous(breaks = seq(0, 0.15, 0.025),
+expand = c(0,0)) +
+scale_y_continuous(expand = c(0,0))
+
+mean(df_pinnipedia$x)
+sd(df_pinnipedia$x)
+
+ggsave(filename = "figures/Fig_primer_bias_pinnipedia.tiff",
+device = "tiff",
+dpi = 300,
+width = 6,
+height = 9,
+units = "in")
+
+df_arctocephalus <- x[150:165,]
+a <- max(dnorm(mean = mean(df_arctocephalus$x),
+sd = sd(df_arctocephalus$x),
+x = seq(0,0.15,0.025)))*0.025
+
+# Histogram overlaid with kernel density curve
+ggplot(data = df_arctocephalus, aes(x = x)) + 
+geom_histogram(aes(y = 0.025 * ..density..),      # Histogram with freq
+binwidth = .025,
+colour = "black", fill = "darkblue") +
+stat_function(fun = freq_dnorm, colour = "darkorange", size = 1.5,
+args = list(mean = mean(df_arctocephalus$x, na.rm = TRUE),
+sd = sd(df_arctocephalus$x, na.rm = TRUE))) +
+theme_classic() +
+theme(axis.title = element_text(size = 16),
+axis.text = element_text(size = 12)) +
+xlab("Divergent sites [%]") +
+ylab("Proportion of sequences (n = 16)") +
+geom_segment(aes(x = mean(x), y = 0, 
+xend = mean(x), 
+yend = a),
+colour = "black",
+size = 1.2,
+linetype = "dashed") +
+scale_x_continuous(breaks = seq(0, 0.15, 0.025),
+expand = c(0,0)) +
+scale_y_continuous(breaks = seq(0,0.4,0.1), limits = c(0,0.4),
+expand = c(0,0))
+mean(df_arctocephalus$x)
+sd(df_arctocephalus$x)
+
+ggsave(filename = "figures/Fig_primer_bias_arctocephalus.tiff",
+device = "tiff",
+dpi = 300,
+width = 6,
+height = 9,
+units = "in")
+
+###################################################################
+###################################################################
+
+## 1. list primer alignment files
+files <- list.files("data", pattern = "primer-alignment.fas", full.names = T)
+
+
+## 3. read fasta
+## one file per primer pair; 
+## output separately for carnivora and pinnipedia
+
+data <- lapply(files, function(x) {
+mat <- read.dna(x,
+format = "fasta") %>%
+as.character() %>%
+apply(.,2, toupper)
+
+## remove primer
+mat <- mat[-1,]
+
+## replace missing data by NA
+mat[mat == "-"] <- NA
+
+length_x <- apply(mat, 1, function(x) length(x[!is.na(x)]) - 1)
+
+length_carnivora <- length(length_x[length_x > 0])
+
+length_pinnipedia <- length_x[which(meta_data2$Taxon == "Pinnipedia")]
+length_pinnipedia <- length(length_pinnipedia[length_pinnipedia > 0])
+
+## count number of bases per site
+BaseCount <- function(x) length(unique(x[!is.na(x) & x != "N"]))
+df <- data.frame(x = rep(1:ncol(mat), 2), #site
+y = c(apply(mat, 2, BaseCount),
+apply(mat[which(meta_data2$Taxon == "Pinnipedia"),], 2,  BaseCount)),
+tax = c(rep("Carnivora", ncol(mat)),
+rep("Pinnipedia", ncol(mat))),
+n = c(rep(length_carnivora, ncol(mat)),
+rep(length_pinnipedia, ncol(mat))))
+})
+
+names(data) <- c(
+"Cammen et al.\n2011",
+"DQB1/\nDQB2",
+"DQBF/\nDQBR",
+"Hoelzel et al.\n1999",
+"MDQB1/\nMDQB2",
+"NeciDQBEx2F/\nNeciDQBEx2R")
+
+## add study as column to df
+
+df2 <- lapply(1:length(data), function(x) {
+data[[x]]$study <- names(data)[x]
+data[[x]]
+}) %>%
+do.call("rbind",.)
+
+sample_sizes <- subset(df2, x == 1 )
+sample_sizes$y <- 3.8
+sample_sizes$x <- 12
+
+## 4. plot
+ggplot(df2, aes(x,y)) +
+geom_bar(stat = "identity") +
+theme_bw(base_size = 11) +
+theme(panel.grid = element_blank(),
+axis.text = element_text(size = 10),
+axis.title = element_text(size = 12)) +
+facet_wrap(~tax+study, ncol = 6) +
+xlab("Position within primer binding site") +
+ylab("Number of different nucleotides") +
+geom_text(data = sample_sizes, aes(label = paste("n=",n)),
+size = 3)
+
+ggsave(filename = "figures/Fig_primer_bias_spatial.tiff",
+device = "tiff",
+dpi = 300,
+width = 169,
+height = 112,
+units = "mm")
+```
+
+### Cross-amplification ArGa-DQB
+
+* Primer-BLAST results using ArGa-DQB-F & ArGa-DQB-R
+
+```{r, eval = FALSE}
+accession.info <- 
+  read.table("data/primerBLAST-sequences.txt", sep = "\t", header = T)
+
+ape::read.GenBank(
+  access.nb = accession.info[[1]]) %>%
+  set_names(paste0(accession.info[[2]],"_", names(.))) %>%
+  ## write to fasta file
+  ape::write.dna(file = file.path("blast/seq/", "ArGaDQBref.fasta"),
+                 format = "fasta")
+```
+
+# Comparative Analyses
+
+Investigating biases in MHC II DQB genotyping based on published sequences on mammals derived from the Genbank repositories. 
+
+```{r, eval = F}
+## get accession numbers for genbank entries 
+## NOT RUN
+# lines <- seq(from = 3, to = 6496, by = 4)
+# out <- lapply(lines, function(x) {
+#   readr::read_lines(file = "data/Database queries/02-Genbank-query-pruned-Manual-Addition.txt",
+#                     skip = x - 1,
+#                     n_max = 1)
+# }) %>%
+#   lapply(., function(x) strsplit(x, " ")[[1]][1]) %>%
+#   do.call("rbind",.) %>% 
+#   write.table(., file = "data/Database queries/03-Genbank-query-pruned-accession.nb.txt",
+#               quote = F,
+#               row.names = F,
+#               col.names = F)
+# 
+# accession.nb <- 
+#   read.table("data/Database queries/03-Genbank-query-pruned-accession.nb.txt",
+#              header = F)[[1]] %>% 
+#   as.character()
+# 
+# seqs <- pbapply::pblapply(accession.nb[!duplicated(accession.nb)], ape::read.GenBank)  %>%
+#   set_names(accession.nb[!duplicated(accession.nb)]) 
+# save(seqs, file = "data/Database queries/04-Genbank-query.RData")
+
+load("data/Database queries/04-Genbank-query.RData")
+
+##  test if there are duplicated sequences
+seqs.char <- lapply(seqs, function(x) x[[1]] %>% paste(., collapse = ""))
+dupls <- which(duplicated(seqs.char) == T) %>% length
+dupl.seqs <- which(seqs.char %in% seqs.char[[dupls]])
+
+# There are 128 duplicated sequences !
+
+
+## write to fasta
+ape::write.dna(
+  x = seqs[[1]], append = F,
+  file = "data/Database queries/04-Genbank-query.fasta",
+  format = "fasta")
+for (i in 2:length(seqs)) {
+  ape::write.dna(
+    x = seqs[[i]], append = T,
+    file = "data/Database queries/04-Genbank-query.fasta",
+    format = "fasta")
+}
+
+
+## save metadata
+## skip duplicated sequences when pulling out the data
+
+rows <- (which(!duplicated(accession.nb) == TRUE) - 1)*4 + 2
+seqs.meta <- data.frame(seq = accession.nb[!duplicated(accession.nb)],
+                        taxon = lapply(seqs, function(x) attr(x, "species") %>% 
+                                         stringr::str_replace_all(., "_", " ")) %>%
+                          unlist(),
+                        bp = lapply(seqs, function(x) length(x[[1]])) %>% 
+                          unlist(),
+                        source =   lapply(rows, function(x) {
+                          readr::read_lines(file = "data/Database queries/02-Genbank-query-pruned-Manual-Addition.txt",
+                                            skip = x - 1,
+                                            n_max = 1)
+                        }) %>%
+                          lapply(., function(x) strsplit(x, " ")[[1]][4]) %>%
+                          do.call("rbind",.)  %>% 
+                          as.character(),
+                        description = lapply(seqs, function(x) attr(x, "description")) %>% 
+                          unlist())
+write.table(seqs.meta, "data/Database queries/05-Genbank-query.meta")
+
+
+```
+
+# Working on MHC II DQB sequences
+
+```{r, eval = F}
+df <- readxl::read_xlsx("Literature-Review/01-Mammal-DQB-Metaanalysis.xlsx", skip = 1)
+df <- dplyr::filter(df, site %in% c('0', '1'))
+
+glm(alleles ~ loci + N2 + site + fragment + method_factor, data = df, family = 'poisson') %>% summary()
+```
+
+```{r, eval=F}
+seqs.meta <- read.table("data/Database queries/05-Genbank-query.meta")
+seqs.meta[["taxon"]] <- stringr::str_replace_all(seqs.meta[["taxon"]], "_", " ")
+  
+  
+aux.file <- readxl::read_xlsx("Literature-Review/01-Mammal-DQB-Metaanalysis.xlsx",
+                              skip = 1)[,1:4] %>% 
+  unique.data.frame()
+aux.file$taxon <- trimws(aux.file$taxon)
+seqs.meta <- dplyr::left_join(seqs.meta, aux.file, by = "taxon")
+
+View(seqs.meta[is.na(seqs.meta$Order),])
+```
+
+### Extract primer sequences 
+
+```{r, eval=F}
+primer <- readxl::read_xlsx("Literature-Review/01-Mammal-DQB-Metaanalysis.xlsx",
+                              skip = 1)[, c('primer.pair', 'forward primer', 'reverse primer')] %>% 
+  na.omit() %>% 
+  unique.data.frame() %>% 
+  cbind(., 
+lapply(primer[["primer.pair"]], function(x) stringr::str_split(x, pattern = "/")[[1]]) %>% 
+  do.call("rbind",.) %>% 
+  set_colnames(., c("f", "r")))
+
+
+sink("Literature-Review/07-forward-primers.txt", append = F)
+for (i in 1:nrow(primer)) {
+  cat(paste0(">", primer[['f']][i], "\n"))
+  cat(primer[["forward primer"]][i], "\n")
+}
+sink()
+
+sink("Literature-Review/07-reverse-primers.txt", append = F)
+for (i in 1:nrow(primer)) {
+  cat(paste0(">", primer[['r']][i], "\n"))
+  cat(primer[["reverse primer"]][i], "\n")
+}
+sink()
+```
